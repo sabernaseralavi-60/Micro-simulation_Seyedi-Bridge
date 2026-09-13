@@ -1,0 +1,108 @@
+# ثبت تمام فرض‌های ورودی مدل — فاز ۰
+# قواعد پر کردن (CLAUDE.md §3.3):
+#   value, unit, source (observed|osm|imagery|engineering_judgement|literature),
+#   range_low, range_high, sensitivity (true|false)
+#
+# این فایل به‌مرور در فازهای ۱ تا ۴ تکمیل می‌شود. فیلدهای فاز ۰ فقط هندسه و bbox را پوشش می‌دهند.
+
+study_area:
+  intersection_name: "تقاطع زیرپل سیدی (بلوار سیدی × بزرگراه امام‌رضا)، کرمان"
+  center_lon:
+    value: 57.0850
+    unit: degree_WGS84
+    source: imagery
+    range_low: 57.0830
+    range_high: 57.0870
+    sensitivity: true
+    note: "میانگین مختصات نشانگر ماوس در ۵ اسکرین‌شات Google Earth؛ نیاز به راستی‌آزمایی با OSM/GPS میدانی."
+  center_lat:
+    value: 30.3165
+    unit: degree_WGS84
+    source: imagery
+    range_low: 30.3155
+    range_high: 30.3180
+    sensitivity: true
+    note: "همان منبع center_lon."
+  bbox_half_extent:
+    value: 400
+    unit: meter
+    source: engineering_judgement
+    range_low: 400
+    range_high: 600
+    sensitivity: false
+    note: "حداقل ۴۰۰ متر طبق قاعدهٔ CLAUDE.md فاز۰ برای جلوگیری از اثر لبه روی صف‌ها."
+
+bridge_geometry:
+  deck_orientation:
+    value: "east_west"
+    unit: categorical
+    source: imagery
+    range_low: null
+    range_high: null
+    sensitivity: false
+    note: "بزرگراه امام رضا روی عرشه؛ منطبق با نام‌گذاری Google Maps."
+  deck_lanes_per_direction:
+    value: 3
+    unit: count
+    source: imagery
+    range_low: 2
+    range_high: 3
+    sensitivity: true
+    note: "برآورد چشمی از 2025_zoom.png؛ فاقد شمارش دقیق پیکسلی."
+  underpass_orientation:
+    value: "north_south"
+    unit: categorical
+    source: imagery
+    range_low: null
+    range_high: null
+    sensitivity: false
+  underpass_lanes_per_direction:
+    value: 2
+    unit: count
+    source: imagery
+    range_low: 1
+    range_high: 2
+    sensitivity: true
+    note: "بلوار سیدی زیر پل، برآورد چشمی از 2017.png و 2025_zoom.png."
+  span_width_between_abutments:
+    value: 26
+    unit: meter
+    source: imagery
+    range_low: 20
+    range_high: 32
+    sensitivity: true
+    note: "برآورد پیکسلی از سایهٔ عرشه در 2025_zoom.png، غیرمتریک — نیازمند راستی‌آزمایی OSM/میدانی."
+  loop_ramp_radius_nw:
+    value: 30
+    unit: meter
+    source: imagery
+    range_low: 20
+    range_high: 40
+    sensitivity: true
+    note: "رمپ حلقوی شمال‌غربی، برآورد چشمی نسبت به عرض خط (۳.۵ متر)."
+  loop_ramp_radius_ne:
+    value: 30
+    unit: meter
+    source: imagery
+    range_low: 20
+    range_high: 40
+    sensitivity: true
+  weave_area_south_radius:
+    value: 22
+    unit: meter
+    source: imagery
+    range_low: 15
+    range_high: 30
+    sensitivity: true
+    note: "انحنای جنوبی حول جزیرهٔ قطره‌ای، زیر پل."
+  pier_offset_from_carriageway_edge:
+    value: 1.5
+    unit: meter
+    source: engineering_judgement
+    range_low: 0.5
+    range_high: 3.0
+    sensitivity: true
+    note: "پایه‌ها در هیچ تصویری با قطعیت بالا دیده نمی‌شوند؛ فرض مهندسی استاندارد برای عرض ایمنی حاشیهٔ پایه از لبهٔ سواره‌رو هم‌سطح."
+
+fleet_and_behavior:
+  note: "این بخش در فاز ۲ تکمیل می‌شود (config/vtypes.yml)."
