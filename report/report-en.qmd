@@ -68,6 +68,27 @@ matrix. Demand in this version is entirely hypothetical (see
   absence of channelization or signals (see
   `traffic_control.weave_merge_junction_model`).
 
+**Key geometric finding — the bridge's 7-bay pier structure:** a close visual
+inspection by the user of `2012.png` (when the bridge structure was still bare
+and the piers fully visible) showed that, along the bridge's east-west axis,
+the space under the deck is divided into 7 bays: 3 on the west + 1 center bay
++ 3 on the east (@fig-sketch). Of the 3 bays on each side, only the one
+**adjacent to the center** is open to traffic and is where vehicles actually
+pass/turn; the two outer bays on each side are completely closed and are part
+of the bridge's structural body (not usable open space), and the center bay is
+currently kept deliberately closed. This means the weaving area under the
+bridge is not, contrary to the Phase-0 assumption, one continuous open
+plaza — it is exactly **two discrete choke points** (the west open bay and the
+east open bay) separated by a closed structural section; the observed
+roundabout-like weaving behavior arises from vehicles circulating between
+exactly these two choke points. **Scenario implication:** opening the center
+bay (subject to a structural engineer confirming load-bearing capacity — outside
+this traffic study's scope) is an explicit Phase-4 option that would open a
+third through-corridor under the bridge. See
+`config/assumptions.yml -> bridge_geometry.span_structure`.
+
+![Updated geometric sketch with the bridge's real 7-bay pier structure (green label = open bay, red label = closed bay)](../outputs/figures/seyedi_sketch.png){#fig-sketch width=90%}
+
 **Fleet composition and behavior** (`config/vtypes.yml`, all flagged
 `sensitivity: true` in `assumptions.yml`):
 

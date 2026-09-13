@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 """
-سنتز هندسی فاز ۰ — تقاطع زیرپل سیدی، کرمان.
+سنتز هندسی فاز ۰-۳ — تقاطع زیرپل سیدی، کرمان.
 
 این اسکریپت به‌صورت برنامه‌نویسی‌شده (نه با ابزار ترسیم دستی) یک اسکچ پلان از
-وضع موجود زیرپل تولید می‌کند: عرشهٔ پل، محور هم‌سطح، پایه‌های تخمینی،
-رمپ‌های حلقوی ورودی/خروجی، و مسیر گردش (weaving) زیر پل.
+وضع موجود زیرپل تولید می‌کند: عرشهٔ پل، محور هم‌سطح، ساختار واقعی ۷دهانه‌ای
+پایه‌های پل (تأیید مستقیم کاربر با بازرسی data/raw/imagery/2012.png در فاز ۳ —
+رجوع به assumptions.yml -> bridge_geometry.span_structure)، رمپ‌های حلقوی
+ورودی/خروجی، و مسیر گردش (weaving) زیر پل.
 
 تمام پارامترهای هندسی از config/assumptions.yml خوانده می‌شوند — هیچ عددی در
 این فایل هاردکد نشده؛ خروجی با `make sketch` یا اجرای مستقیم این اسکریپت از صفر
@@ -48,7 +50,9 @@ def build_sketch(assumptions: dict) -> plt.Figure:
     r_nw = val(bg, "loop_ramp_radius_nw")
     r_ne = val(bg, "loop_ramp_radius_ne")
     r_weave = val(bg, "weave_area_south_radius")
-    pier_offset = val(bg, "pier_offset_from_carriageway_edge")
+    span_layout = bg["span_structure"]["value"]["layout_west_to_east"]
+    open_w = val(bg, "open_span_width")
+    closed_w = val(bg, "closed_span_width")
 
     lane_w = 3.5  # m، عرض استاندارد خط — قضاوت مهندسی (ثبت در assumptions در فاز ۲)
     deck_half_w = deck_lanes * lane_w  # نیم‌عرض عرشه هر جهت
@@ -81,16 +85,39 @@ def build_sketch(assumptions: dict) -> plt.Figure:
     ax.text(0, span / 2 + 18, "عرشهٔ پل — بزرگراه امام‌رضا (شرقی-غربی)",
             ha="center", fontsize=9)
 
-    # --- پایه‌های تخمینی پل (دو ردیف، در حاشیهٔ محور هم‌سطح) ---
-    pier_x = under_half_w + pier_offset
-    for sign in (-1, 1):
-        for y in (-span / 2 + 2, span / 2 - 2):
-            ax.add_patch(
-                plt.Circle((sign * pier_x, y), 1.0, facecolor="#4d4d4d", zorder=5)
-            )
-    ax.text(pier_x + 6, span / 2 + 4, "پایه‌های تخمینی\n(اطمینان: متوسط)",
-            fontsize=7, color="#4d4d4d", va="bottom")
+    # --- ساختار ۷دهانه‌ای پل (تأیید مستقیم کاربر با بازرسی 2012.png، فاز ۳) ---
+    # چیدمان از غرب به شرق: closed, closed, open, closed_center, open, closed, closed
+    # پایه‌ها روی دو خط لبهٔ عرشه (y=±span/2) قرار می‌گیرند؛ هر دهانه یک بازهٔ x
+    # بین دو پایهٔ متوالی است. عرض دهانه‌ها شماتیک است (رجوع به
+    # assumptions.yml -> open_span_width / closed_span_width).
+    widths = [closed_w if s.startswith("closed") else open_w for s in span_layout]
+    total_w = sum(widths)
+    x_start = -total_w / 2
+    boundaries = [x_start]
+    for w in widths:
+        boundaries.append(boundaries[-1] + w)
+    pier_thickness = 1.6
 
+    for i, (s, w) in enumerate(zip(span_layout, widths)):
+        x0, x1 = boundaries[i], boundaries[i + 1]
+        is_open = s == "open"
+        color = "#ffffff" if is_open else "#6b6b6b"
+        alpha = 0.0 if is_open else 0.85
+        for y0 in (-span / 2, span / 2 - 2):
+            ax.add_patch(
+                plt.Rectangle((x0, y0), w, 2, facecolor=color, edgecolor="none",
+                              alpha=alpha, zorder=4.5)
+            )
+        label = {"open": "باز", "closed": "بسته", "closed_center": "بسته (مرکزی)"}[s]
+        ax.text((x0 + x1) / 2, span / 2 + 3, label, ha="center", va="bottom",
+                fontsize=6.5, color=("#1a7a1a" if is_open else "#7a1a1a"))
+
+    # خطوط پایه‌ها (مرزهای بین دهانه‌ها)
+    for bx in boundaries:
+        ax.add_patch(
+            plt.Rectangle((bx - pier_thickness / 2, -span / 2 - 1), pier_thickness,
+                          span + 2, facecolor="#3a3a3a", zorder=5)
+        )
     # --- رمپ‌های حلقوی شمالی (ورود/خروج به عرشه) ---
     theta = np.linspace(0, np.pi, 60)
 
@@ -129,8 +156,9 @@ def build_sketch(assumptions: dict) -> plt.Figure:
     ax.set_ylabel("فاصلهٔ شمالی-جنوبی از مرکز تقاطع (متر)")
     ax.set_title(
         "سنتز هندسی وضع موجود — تقاطع زیرپل سیدی، کرمان\n"
-        "مبنا: data/raw/imagery/2025_zoom.png — مدل کالیبره‌نشده، فقط برای بازرسی چشمی فاز ۰",
-        fontsize=10,
+        "ساختار ۷دهانه‌ای پایه‌ها طبق تأیید کاربر (2012.png) — فقط دهانه‌های مجاور مرکز باز است\n"
+        "مدل کالیبره‌نشده، فقط برای بازرسی چشمی",
+        fontsize=9.5,
     )
     ax.legend(loc="lower right", fontsize=7, framealpha=0.9)
     ax.grid(alpha=0.15, zorder=0)
