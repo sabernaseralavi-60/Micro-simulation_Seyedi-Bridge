@@ -1,0 +1,38 @@
+# --- Python ---
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# --- SUMO raw simulation outputs (only summarized parquet/csv are committed) ---
+out/
+outputs/logs/*.xml
+scenarios/**/out/
+scenarios/**/*.xml
+!scenarios/**/*.rou.xml
+!scenarios/**/*.sumocfg
+!scenarios/**/*.net.xml
+
+# raw tripinfo/summary/ssm/fcd dumps — never commit raw XML telemetry
+**/tripinfo*.xml
+**/summary*.xml
+**/stats*.xml
+**/ssm*.xml
+**/fcd*.xml
+**/emission*.xml
+
+# --- Quarto ---
+/report/_site/
+/report/.quarto/
+*_files/
+*.knit.md
+*.utf8.md
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.vscode/
+*.swp
+
+# --- credentials ---
+.env
