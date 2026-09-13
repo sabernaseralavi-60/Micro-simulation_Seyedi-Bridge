@@ -36,3 +36,6 @@ Thumbs.db
 
 # --- credentials ---
 .env
+token.txt
+*.token
+*_token.txt
