@@ -2,21 +2,25 @@
 # Makefile اصلی خط لولهٔ تکرارپذیر — طبق CLAUDE.md §3.1 هر شکل/جدول/عدد گزارش باید
 # با `make all` از صفر بازتولید شود.
 #
-# این نسخه مربوط به فاز ۰ است؛ اهداف network/demand/run/analyze/report در فازهای
-# بعدی (طبق CLAUDE.md §۴) اضافه می‌شوند.
+# فاز ۱ کامل شد: network -> demand -> run -> analyze -> figures -> report
+# (هر سه فرمت، هر دو زبان). چند-سناریو/چند-seed در فاز ۳ به run/analyze اضافه می‌شود.
 
 PYTHON := .venv/Scripts/python.exe
+SUMO_HOME_DIR := $(CURDIR)/.venv/Lib/site-packages/sumo
+export SUMO_HOME := $(SUMO_HOME_DIR)
+export PYTHONIOENCODING := utf-8
+export QUARTO_PYTHON := $(CURDIR)/$(PYTHON)
 
-.PHONY: all check-env sketch network demand run analyze report publish clean
+.PHONY: all check-env sketch network demand run analyze figures report publish clean
 
-all: check-env sketch
+all: check-env sketch network demand run analyze figures report
 
 ## بررسی نصب‌بودن ابزارهای لازم (فاز ۰، گام ۱)
 check-env:
 	@echo "--- sumo ---"
-	@SUMO_HOME=.venv/Lib/site-packages/sumo .venv/Lib/site-packages/sumo/bin/sumo.exe --version | head -1
+	@"$(SUMO_HOME_DIR)/bin/sumo.exe" --version | head -1
 	@echo "--- python + sumolib/traci ---"
-	@SUMO_HOME=.venv/Lib/site-packages/sumo $(PYTHON) -c "import sumolib, traci; print('ok')"
+	@$(PYTHON) -c "import sumolib, traci; print('ok')"
 	@echo "--- quarto ---"
 	@quarto --version
 	@echo "--- gh ---"
@@ -28,24 +32,37 @@ check-env:
 sketch:
 	$(PYTHON) src/00_geometry_sketch.py
 
-## اهداف فازهای بعدی (placeholder — پیاده‌سازی در فاز ۱ به بعد)
+## فاز ۱: ساخت شبکه از OSM (osmGet + netconvert) + بازرسی جدایی تراز
 network:
-	@echo "TODO فاز ۱: netconvert از data/raw/osm/seyedi.osm"
+	$(PYTHON) src/01_build_network.py
 
+## فاز ۱: تقاضای jtrrouter (حجم ورودی + نسبت گردش) از روی هندسهٔ شبکه
 demand:
-	@echo "TODO فاز ۱: jtrrouter از demand/flows.xml + demand/turns.xml"
+	$(PYTHON) src/03_build_demand.py
 
+## فاز ۱: اجرای سناریوی S0 (تک-seed، Walking Skeleton)
 run:
-	@echo "TODO فاز ۱: اجرای sumo برای هر سناریو/seed"
+	$(PYTHON) src/04_run_experiments.py
 
+## فاز ۱: استخراج KPI به outputs/tables/*.{csv,parquet}
 analyze:
-	@echo "TODO فاز ۱: استخراج KPI و آمار چند-seed"
+	$(PYTHON) src/05_extract_kpis.py
 
+## فاز ۱: نمودار KPI
+figures:
+	$(PYTHON) src/07_figures.py
+
+## رندر گزارش دوزبانه در هر سه فرمت (html/pdf/docx)
 report:
-	@echo "TODO فاز ۱: quarto render --profile fa && quarto render --profile en"
+	cd report && quarto render report-fa.qmd --profile fa --to html
+	cd report && quarto render report-fa.qmd --profile fa --to pdf
+	cd report && quarto render report-fa.qmd --profile fa --to docx
+	cd report && quarto render report-en.qmd --profile en --to html
+	cd report && quarto render report-en.qmd --profile en --to pdf
+	cd report && quarto render report-en.qmd --profile en --to docx
 
 publish:
 	@echo "TODO فاز ۵: quarto publish gh-pages (پس از Checkpoint ۲)"
 
 clean:
-	rm -rf outputs/figures/* outputs/tables/* outputs/logs/*
+	rm -rf outputs/figures/* outputs/tables/* outputs/logs/* report/_output

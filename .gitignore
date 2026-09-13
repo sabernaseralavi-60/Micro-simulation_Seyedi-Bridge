@@ -23,10 +23,14 @@ scenarios/**/*.xml
 
 # --- Quarto ---
 /report/_site/
+/report/_output/
 /report/.quarto/
 *_files/
 *.knit.md
 *.utf8.md
+report/*.log
+report/*.tex
+report/*_cache/
 
 # --- OS / editor ---
 .DS_Store

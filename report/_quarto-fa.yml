@@ -1,18 +1,29 @@
 lang: fa
-dir: rtl
 format:
   html:
+    dir: rtl
     theme: cosmo
     toc-title: "فهرست"
   pdf:
+    # توجه: هیچ dir: rtl در سطح این فرمت نمی‌گذاریم — تنظیم آن باعث می‌شود
+    # pandoc خودش babel را با گزینهٔ bidi=... بارگذاری کند که با xepersian
+    # تداخل مستقیم دارد (خطای "\persiantoday already defined"). xepersian
+    # خودش راست‌به‌چپ‌بودن را کامل مدیریت می‌کند؛ طبق پیش‌بینی CLAUDE.md
+    # (تداخل bidi/polyglossia)، xepersian را به‌جای polyglossia انتخاب کردیم.
     documentclass: article
+    template-partials:
+      - babel-lang.tex
     include-in-header:
       text: |
-        \usepackage{bidi}
-        \usepackage{polyglossia}
-        \setmainlanguage{farsi}
-        \setotherlanguage{english}
-  docx: {}
+        \usepackage{xepersian}
+        \settextfont[Path = assets/fonts/, Extension = .ttf, UprightFont = *-Regular, BoldFont = *-Bold]{Vazirmatn}
+        \setlatintextfont[Path = assets/fonts/, Extension = .ttf, UprightFont = *-Regular, BoldFont = *-Bold]{Vazirmatn}
+        % سازگاری نسخه: array-xetex-bidi.def (bidi) از یک قلاب تگ‌گذاری PDF کرنل
+        % LaTeX2e استفاده می‌کند که در این توزیع TinyTeX تعریف نشده -> بدون این
+        % شیم، هر جدول RTL با "Undefined control sequence" کرش می‌کند.
+        \providecommand{\UseMathForPositioningText}[1]{#1}
+  docx:
+    dir: rtl
 language:
   crossref-fig-title: "شکل"
   crossref-tbl-title: "جدول"

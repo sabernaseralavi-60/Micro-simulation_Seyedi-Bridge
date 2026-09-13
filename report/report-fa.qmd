@@ -50,10 +50,15 @@ end-to-end** است — از دادهٔ خام OSM تا گزارش منتشرش�
 #| tbl-cap: "خلاصهٔ KPI به تفکیک پا — سناریوی S0، تک-seed=۴۲"
 import pandas as pd
 df = pd.read_csv("../outputs/tables/s0_kpi_summary.csv")
+approach_fa = {"west": "غرب (عرشهٔ پل)", "east": "شرق (عرشهٔ پل)",
+               "north": "شمال (جادهٔ سیدی)", "south": "جنوب (بلوار سلیمانی)",
+               "کل (all)": "کل تقاطع"}
+df["approach"] = df["approach"].map(approach_fa)
 df.columns = ["پا", "تعداد وسیله", "میانگین مدت سفر (ثانیه)",
               "میانگین تلف‌شدگی زمان (ثانیه)", "میانگین انتظار (ثانیه)",
               "میانگین طول مسیر (متر)"]
-df.round(2)
+from IPython.display import Markdown
+Markdown(df.round(2).to_markdown(index=False))
 ```
 
 ![میانگین تلف‌شدگی زمان به تفکیک پا (تک-seed، تقاضای فرضی)](../outputs/figures/s0_timeloss_by_approach.png){#fig-timeloss width=85%}

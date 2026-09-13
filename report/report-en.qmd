@@ -58,7 +58,8 @@ import pandas as pd
 df = pd.read_csv("../outputs/tables/s0_kpi_summary.csv")
 df.columns = ["Approach", "N vehicles", "Mean duration (s)",
               "Mean time loss (s)", "Mean waiting (s)", "Mean route length (m)"]
-df.round(2)
+from IPython.display import Markdown
+Markdown(df.round(2).to_markdown(index=False))
 ```
 
 ![Mean time loss by approach (single seed, hypothetical demand)](../outputs/figures/s0_timeloss_by_approach.png){#fig-timeloss width=85%}
