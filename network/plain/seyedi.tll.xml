@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2026-09-13T22:11:06.436291+03:30 by Eclipse SUMO netconvert 1.27.1
+<netconvertConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
+
+    <input>
+        <type-files value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\config\typemap\urban_ir.typ.xml"/>
+        <osm-files value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\data\raw\osm\seyedi_bbox.osm.xml"/>
+    </input>
+
+    <output>
+        <output-file value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\network\seyedi.net.xml"/>
+        <plain-output-prefix value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\network\plain\seyedi"/>
+    </output>
+
+    <projection>
+        <proj.utm value="true"/>
+    </projection>
+
+    <processing>
+        <geometry.remove value="true"/>
+        <lefthand value="false"/>
+    </processing>
+
+    <tls_building>
+        <tls.discard-simple value="true"/>
+    </tls_building>
+
+    <ramp_guessing>
+        <ramps.guess value="true"/>
+    </ramp_guessing>
+
+    <edge_removal>
+        <remove-edges.by-vclass value="pedestrian,bicycle,tram,rail"/>
+        <keep-edges.by-type value="highway.trunk,highway.trunk_link,highway.primary,highway.primary_link,highway.secondary,highway.secondary_link"/>
+    </edge_removal>
+
+    <junctions>
+        <no-turnarounds value="true"/>
+        <junctions.join value="true"/>
+        <junctions.join-dist value="12"/>
+    </junctions>
+
+    <formats>
+        <osm.layer-elevation value="4"/>
+    </formats>
+
+</netconvertConfiguration>
+-->
+
+<tlLogics version="1.20" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/tllogic_file.xsd">
+</tlLogics>

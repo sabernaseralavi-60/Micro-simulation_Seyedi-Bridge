@@ -105,6 +105,18 @@ bridge_geometry:
     note: "پایه‌ها در هیچ تصویری با قطعیت بالا دیده نمی‌شوند؛ فرض مهندسی استاندارد برای عرض ایمنی حاشیهٔ پایه از لبهٔ سواره‌رو هم‌سطح."
 
 traffic_control:
+  turn_ratio_baseline:
+    value: {through: 70, right: 15, left: 15}
+    unit: percent
+    source: engineering_judgement
+    range_low: null
+    range_high: null
+    sensitivity: true
+    note: "نسبت گردش پیش‌فرض فاز ۱ (Walking Skeleton)، صرفاً برای اولین تقاطع
+      واقعی پایین‌دست هر پای ورودی؛ در سایر تقاطع‌ها jtrrouter از
+      --turn-defaults 15,70,15 استفاده می‌کند. این اعداد حدس مهندسی خام‌اند و
+      باید در فاز ۳ با شمارش گردش‌های واقعی (رجوع به §۵ برنامهٔ کالیبراسیون در
+      CLAUDE.md) جایگزین شوند."
   left_turn_status_baseline:
     value: "free_informal_no_signage"
     unit: categorical
@@ -128,6 +140,52 @@ checkpoint_log:
          دقیق‌تر در فاز ۱-۲ با OSM/تصویر مقیاس‌شده انجام می‌شود."
       - "گردش به چپ زیر پل آزاد/غیررسمی است (بدون ممنوعیت) — رجوع به
          traffic_control.left_turn_status_baseline."
+
+demand_baseline_phase1:
+  entry_volume_west:
+    value: 800
+    unit: veh_per_hour
+    source: engineering_judgement
+    range_low: 400
+    range_high: 1200
+    sensitivity: true
+    note: "بزرگراه امام‌رضا، ورودی غرب (روی عرشه) — حدس خام Walking Skeleton؛
+      جایگزینی در فاز ۳ با شواهد غیرمستقیم (تعداد خط × ظرفیت خط × سهم اشباع)."
+  entry_volume_east:
+    value: 800
+    unit: veh_per_hour
+    source: engineering_judgement
+    range_low: 400
+    range_high: 1200
+    sensitivity: true
+  entry_volume_north:
+    value: 500
+    unit: veh_per_hour
+    source: engineering_judgement
+    range_low: 250
+    range_high: 900
+    sensitivity: true
+    note: "جادهٔ سیدی، ورودی شمال (هم‌سطح زیر پل)."
+  entry_volume_south:
+    value: 500
+    unit: veh_per_hour
+    source: engineering_judgement
+    range_low: 250
+    range_high: 900
+    sensitivity: true
+    note: "بلوار شهید سلیمانی، ورودی جنوب (ادامهٔ جادهٔ سیدی، هم‌سطح زیر پل)."
+
+network_scope:
+  arterial_only:
+    value: true
+    unit: categorical
+    source: engineering_judgement
+    range_low: null
+    range_high: null
+    sensitivity: false
+    note: "شبکهٔ فاز ۱ به معابر شریانی (trunk/primary/secondary + link) محدود
+      شده تا تقاضای jtrrouter در تار خیابان‌های محلی/مسکونی اطراف پراکنده
+      نشود؛ قابل بازگشت با تغییر --keep-edges.by-type در src/01_build_network.py."
 
 fleet_and_behavior:
   note: "این بخش در فاز ۲ تکمیل می‌شود (config/vtypes.yml)."

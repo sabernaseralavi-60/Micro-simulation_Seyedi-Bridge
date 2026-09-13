@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  فاز ۱ — تقاضای فرضی (Walking Skeleton). اعداد این فایل حدس مهندسی خام‌اند،
+  نه برداشت میدانی — رجوع به config/assumptions.yml -> demand_baseline_phase1.
+  در فاز ۳ با شواهد غیرمستقیم (تعداد خط، سهم ساعت اوج) و ضریب مقیاس λ جایگزین می‌شوند.
+
+  چهار پای تقاطع (ورودی‌های شبکهٔ شریانی فاز ۱):
+    - 410247492      : بزرگراه امام‌رضا، ورودی از غرب (روی عرشهٔ پل)
+    - 412303657#0    : بزرگراه امام‌رضا/آیت‌الله خامنه‌ای، ورودی از شرق (روی عرشهٔ پل)
+    - 592154956#0    : جادهٔ سیدی، ورودی از شمال (هم‌سطح، زیر پل)
+    - 610531293#0    : بلوار شهید سلیمانی (ادامهٔ جنوبی جادهٔ سیدی)، ورودی از جنوب (هم‌سطح)
+-->
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <vType id="passenger" vClass="passenger" length="4.5" minGap="2.5"/>
+
+    <flow id="from_west"  type="passenger" from="410247492"   begin="0" end="3600" number="800"/>
+    <flow id="from_east"  type="passenger" from="412303657#0" begin="0" end="3600" number="800"/>
+    <flow id="from_north" type="passenger" from="592154956#0" begin="0" end="3600" number="500"/>
+    <flow id="from_south" type="passenger" from="610531293#0" begin="0" end="3600" number="500"/>
+</routes>

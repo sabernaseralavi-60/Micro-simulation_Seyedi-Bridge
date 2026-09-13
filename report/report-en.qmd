@@ -1,0 +1,83 @@
+---
+title: "Seyedi Under-Bridge Intersection Traffic Reorganization"
+subtitle: "Phase 1 Report — Walking Skeleton"
+author: "Study Team (Claude Code, supervised by Saber Naseralavi)"
+date: today
+---
+
+::: {.callout-important}
+## Warning — Uncalibrated Model
+This is the **Phase 1 (Walking Skeleton)** version of the report. The network
+geometry comes straight from raw OSM data and demand is entirely **hypothetical**
+(engineering guesswork, not field data). Results here are valid **only for
+testing the reproducible pipeline end-to-end** — not for any scenario
+comparison or absolute-value prediction. Scenario comparison and sensitivity
+analysis follow in Phases 2-4, once accurate geometry and evidence-based demand
+are in place.
+:::
+
+## 1. Purpose of this version
+
+Per the project roadmap (`CLAUDE.md`), Phase 1's goal is a **complete,
+end-to-end** pipeline — from raw OSM data to a published report — even with raw
+geometry and demand. This report demonstrates pipeline correctness, not final
+engineering findings.
+
+## 2. Network construction and grade-separation check
+
+The network was built from OpenStreetMap (Overpass API, bbox around the Seyedi
+under-bridge intersection) using `netconvert`. Separation between the elevated
+bridge deck (Imam Reza Highway, `bridge=yes layer=1`) and the at-grade network
+below (Seyedi road / Shahid Soleimani Blvd) was **visually inspected and
+confirmed** (@fig-layer-check) — per `CLAUDE.md` this is the single most
+critical failure point for this model.
+
+![Visual grade-separation check: red = bridge deck (z>0), blue = at-grade network (z=0). The deck passes over the ground network with no connection.](../outputs/figures/network_layer_check_zoom.png){#fig-layer-check width=85%}
+
+## 3. Demand: the jtrrouter method
+
+Per `CLAUDE.md`'s methodology justification, for a single intersection, entry
+volume per approach + turning ratios is far less data-hungry than a full OD
+matrix. Demand in this version is entirely hypothetical (see
+`config/assumptions.yml`, sections `demand_baseline_phase1` and
+`traffic_control.turn_ratio_baseline`):
+
+| Approach | Hypothetical entry volume (veh/h) |
+|---|---|
+| West (bridge deck) | 800 |
+| East (bridge deck) | 800 |
+| North (Seyedi road) | 500 |
+| South (Shahid Soleimani Blvd) | 500 |
+
+## 4. Run result (single seed, S0 scenario)
+
+```{python}
+#| label: tbl-kpi
+#| tbl-cap: "KPI summary by approach — scenario S0, single seed=42"
+import pandas as pd
+df = pd.read_csv("../outputs/tables/s0_kpi_summary.csv")
+df.columns = ["Approach", "N vehicles", "Mean duration (s)",
+              "Mean time loss (s)", "Mean waiting (s)", "Mean route length (m)"]
+df.round(2)
+```
+
+![Mean time loss by approach (single seed, hypothetical demand)](../outputs/figures/s0_timeloss_by_approach.png){#fig-timeloss width=85%}
+
+All 2,600 generated vehicles entered the network and completed their trips (no
+gridlock or routing failures) — a basic health signal for network connectivity
+and routing. Time-loss values are low in this run because current hypothetical
+demand is fairly light; this number carries **no engineering meaning** until
+real demand (Phase 3) replaces it.
+
+## 5. Limitations of this version
+
+- Intersection geometry comes directly from OSM; imagery-based corrections
+  (exact lane counts, turning radii, pier positions) have not been applied yet
+  (Phase 2).
+- Demand and turning ratios are entirely hypothetical (Phase 3).
+- Only one scenario (S0) and one seed were run; **no scenario comparison can be
+  drawn from this report** — per the project's Hard Rule 5.
+- The fleet is homogeneous (passenger cars only); motorcycle share and the
+  sublane model are added in Phase 2.
+- The Persian report currently uses Quarto's default theme (the Vazirmatn font
+  and full RTL/xepersian layout are finalized in Phase 5).

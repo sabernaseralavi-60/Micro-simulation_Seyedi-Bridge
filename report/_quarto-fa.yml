@@ -1,0 +1,19 @@
+lang: fa
+dir: rtl
+format:
+  html:
+    theme: cosmo
+    toc-title: "فهرست"
+  pdf:
+    documentclass: article
+    include-in-header:
+      text: |
+        \usepackage{bidi}
+        \usepackage{polyglossia}
+        \setmainlanguage{farsi}
+        \setotherlanguage{english}
+  docx: {}
+language:
+  crossref-fig-title: "شکل"
+  crossref-tbl-title: "جدول"
+  crossref-eq-prefix: "رابطهٔ"
