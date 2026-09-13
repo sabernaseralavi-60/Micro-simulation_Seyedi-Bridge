@@ -104,5 +104,30 @@ bridge_geometry:
     sensitivity: true
     note: "پایه‌ها در هیچ تصویری با قطعیت بالا دیده نمی‌شوند؛ فرض مهندسی استاندارد برای عرض ایمنی حاشیهٔ پایه از لبهٔ سواره‌رو هم‌سطح."
 
+traffic_control:
+  left_turn_status_baseline:
+    value: "free_informal_no_signage"
+    unit: categorical
+    source: observed
+    range_low: null
+    range_high: null
+    sensitivity: false
+    note: "تأیید کاربر در Checkpoint ۱ (۱۴۰۵/۰۶/۲۲): گردش به چپ زیر پل در وضع موجود
+      ممنوعیت رسمی/تابلو ندارد؛ به‌صورت غیررسمی و آزاد (priority/weaving) انجام
+      می‌شود. مدل S0 باید junction model را priority/right_before_left بگذارد،
+      نه tls یا ممنوعیت گردش."
+
+checkpoint_log:
+  checkpoint_1:
+    date: "1405-06-22"
+    decisions:
+      - "هندسهٔ استنباط‌شده (پل شرقی-غربی روی بزرگراه امام‌رضا، بلوار سیدی زیر پل
+         با رمپ‌های حلقوی شمالی و ویوینگ جنوبی) توسط کاربر تأیید شد."
+      - "برآوردهای فعلی تعداد خط ورودی/خروجی هر پا (deck_lanes_per_direction=3,
+         underpass_lanes_per_direction=2) به‌عنوان مبنای فاز ۱ پذیرفته شد؛ اصلاح
+         دقیق‌تر در فاز ۱-۲ با OSM/تصویر مقیاس‌شده انجام می‌شود."
+      - "گردش به چپ زیر پل آزاد/غیررسمی است (بدون ممنوعیت) — رجوع به
+         traffic_control.left_turn_status_baseline."
+
 fleet_and_behavior:
   note: "این بخش در فاز ۲ تکمیل می‌شود (config/vtypes.yml)."
