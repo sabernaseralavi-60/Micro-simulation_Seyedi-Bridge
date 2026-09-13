@@ -29,7 +29,8 @@ scenarios/**/*.xml
 *.knit.md
 *.utf8.md
 report/*.log
-report/*.tex
+report/report-fa.tex
+report/report-en.tex
 report/*_cache/
 
 # --- OS / editor ---

@@ -1,27 +1,31 @@
 ---
 title: "Seyedi Under-Bridge Intersection Traffic Reorganization"
-subtitle: "Phase 1 Report — Walking Skeleton"
+subtitle: "Phase 2 Report — Geometric Fidelity and Fleet Composition"
 author: "Study Team (Claude Code, supervised by Saber Naseralavi)"
 date: today
 ---
 
 ::: {.callout-important}
 ## Warning — Uncalibrated Model
-This is the **Phase 1 (Walking Skeleton)** version of the report. The network
-geometry comes straight from raw OSM data and demand is entirely **hypothetical**
+This is the **Phase 2 (Geometric Fidelity)** version of the report. Base
+geometry still comes from OSM (with imagery-based corrections to the deck lane
+count and merge-junction type) and demand remains entirely **hypothetical**
 (engineering guesswork, not field data). Results here are valid **only for
-testing the reproducible pipeline end-to-end** — not for any scenario
-comparison or absolute-value prediction. Scenario comparison and sensitivity
-analysis follow in Phases 2-4, once accurate geometry and evidence-based demand
-are in place.
+testing the reproducible pipeline and geometric fidelity** — not for any
+scenario comparison or absolute-value prediction. Scenario comparison and
+sensitivity analysis follow in Phases 3-4, once evidence-based demand and
+multi-seed runs are in place.
 :::
 
 ## 1. Purpose of this version
 
-Per the project roadmap (`CLAUDE.md`), Phase 1's goal is a **complete,
+Per the project roadmap (`CLAUDE.md`), Phase 1's goal was a **complete,
 end-to-end** pipeline — from raw OSM data to a published report — even with raw
-geometry and demand. This report demonstrates pipeline correctness, not final
-engineering findings.
+geometry and demand. Phase 2 (this version) brings the critical geometry (deck
+lane count, merge-junction type) and fleet composition closer to imagery
+evidence / engineering judgment on that same pipeline. This report still
+demonstrates pipeline correctness and geometric fidelity, not final engineering
+findings.
 
 ## 2. Network construction and grade-separation check
 
@@ -49,7 +53,54 @@ matrix. Demand in this version is entirely hypothetical (see
 | North (Seyedi road) | 500 |
 | South (Shahid Soleimani Blvd) | 500 |
 
-## 4. Run result (single seed, S0 scenario)
+## 4. Geometric fidelity and fleet composition (Phase 2)
+
+**Imagery-based geometric corrections** (applied to the plain-XML via
+`src/02_patch_geometry.py`, per Hard Rule 2 — no manual netedit editing):
+
+- **Bridge deck lane count:** OSM recorded 2 lanes per direction; a closer
+  review of `2025_zoom.png` (clearly three rows of vehicles) showed 3 lanes
+  with high confidence — corrected. See
+  `config/assumptions.yml -> bridge_geometry.deck_lanes_per_direction`.
+- **Merge-junction type under the bridge:** 9 merge junctions (2 in / 1 out) in
+  the weaving area were changed from netconvert's default `priority` to
+  `zipper` — to represent the real "first-come-first-served" behavior in the
+  absence of channelization or signals (see
+  `traffic_control.weave_merge_junction_model`).
+
+**Fleet composition and behavior** (`config/vtypes.yml`, all flagged
+`sensitivity: true` in `assumptions.yml`):
+
+```{python}
+#| label: tbl-fleet
+#| tbl-cap: "Hypothetical fleet composition (engineering judgment — calibration priority #1)"
+import yaml
+from IPython.display import Markdown
+vcfg = yaml.safe_load(open("../config/vtypes.yml", encoding="utf-8"))
+names = {"passenger": "Passenger car", "motorcycle": "Motorcycle", "taxi": "Taxi",
+         "pickup": "Pickup", "bus": "Bus", "truck_light": "Light truck"}
+rows = [{"Category": names[k], "Share": f"{v['share']*100:.0f}%"} for k, v in vcfg["fleet_composition"].items()]
+import pandas as pd
+Markdown(pd.DataFrame(rows).to_markdown(index=False))
+```
+
+The **sublane** model was enabled (`--lateral-resolution 0.8`) to represent
+motorcycle filtering between lanes; `tau`, `minGap`, `sigma`, `impatience`,
+`jmIgnoreFoeProb`, and `lcAssertive` were all set more aggressively than SUMO
+defaults across classes (most aggressive for motorcycles).
+
+::: {.callout-warning}
+## Notable qualitative finding
+This single-seed run recorded **56 collisions** (with `collision.action=warn`,
+vehicles not removed) in the weaving area. This number is **not reportable as
+an actual collision rate** in any sense (single seed, hypothetical demand and
+behavior), but its qualitative direction — a high-conflict intersection absent
+channelization — matches field observation and this study's core motivation.
+Surrogate safety measures (TTC/DRAC/PET) will be reported statistically with
+multiple seeds in Phase 4.
+:::
+
+## 5. Run result (single seed, S0 scenario)
 
 ```{python}
 #| label: tbl-kpi
@@ -70,15 +121,17 @@ and routing. Time-loss values are low in this run because current hypothetical
 demand is fairly light; this number carries **no engineering meaning** until
 real demand (Phase 3) replaces it.
 
-## 5. Limitations of this version
+## 6. Limitations of this version
 
-- Intersection geometry comes directly from OSM; imagery-based corrections
-  (exact lane counts, turning radii, pier positions) have not been applied yet
-  (Phase 2).
-- Demand and turning ratios are entirely hypothetical (Phase 3).
+- Ramp turning radii and pier positions still come directly from OSM / visual
+  estimation; no field measurement or precisely scaled imagery backs them yet.
+- Demand and turning ratios are entirely hypothetical (Phase 3 replaces them
+  with indirect evidence).
+- Fleet shares (especially the 30% motorcycle share) are engineering judgment,
+  not counts — per the calibration plan (`CLAUDE.md` §5) this is the top field
+  data collection priority.
 - Only one scenario (S0) and one seed were run; **no scenario comparison can be
-  drawn from this report** — per the project's Hard Rule 5.
-- The fleet is homogeneous (passenger cars only); motorcycle share and the
-  sublane model are added in Phase 2.
-- The Persian report currently uses Quarto's default theme (the Vazirmatn font
-  and full RTL/xepersian layout are finalized in Phase 5).
+  drawn from this report** — per the project's Hard Rule 5. The 56-collision
+  figure above is a qualitative signal only, not a citable collision rate.
+- The Persian report now uses the Vazirmatn font with a full RTL layout
+  (xepersian); final visual polish still happens in Phase 5.

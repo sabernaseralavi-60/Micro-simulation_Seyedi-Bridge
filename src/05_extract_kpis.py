@@ -39,6 +39,7 @@ def parse_tripinfo(path: pathlib.Path) -> pd.DataFrame:
             rows.append({
                 "id": elem.get("id"),
                 "approach": leg,
+                "vType": elem.get("vType"),
                 "depart": float(elem.get("depart")),
                 "duration": float(elem.get("duration")),
                 "routeLength": float(elem.get("routeLength")),
@@ -83,6 +84,20 @@ def main() -> None:
     summary = pd.concat([summary, total_row], ignore_index=True)
     summary.to_csv(TABLES_DIR / "s0_kpi_summary.csv", index=False)
     summary.to_parquet(TABLES_DIR / "s0_kpi_summary.parquet", index=False)
+
+    by_vtype = (
+        df.groupby("vType")
+        .agg(
+            n_vehicles=("id", "count"),
+            share=("id", lambda s: len(s) / len(df)),
+            mean_duration_s=("duration", "mean"),
+            mean_timeloss_s=("timeLoss", "mean"),
+        )
+        .reset_index()
+        .sort_values("n_vehicles", ascending=False)
+    )
+    by_vtype.to_csv(TABLES_DIR / "s0_kpi_by_vtype.csv", index=False)
+    by_vtype.to_parquet(TABLES_DIR / "s0_kpi_by_vtype.parquet", index=False)
 
     print(f"[ok] {len(df)} tripinfo پردازش شد.")
     print(summary.to_string(index=False))

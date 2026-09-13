@@ -43,6 +43,7 @@ def main() -> None:
         "--device.ssm.probability", "1",
         "--device.ssm.measures", "TTC DRAC PET",
         "--device.ssm.file", str(OUT_DIR / "ssm.xml"),
+        "--lateral-resolution", "0.8",  # مدل sublane — فاز ۲: فیلترینگ موتورسیکلت بین خطوط
         "--seed", "42",
         "--no-warnings", "true",
     ]

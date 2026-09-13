@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 """
-فاز ۱ — ساخت تقاضای فرضی با jtrrouter (نه ماتریس OD).
+فاز ۱-۲ — ساخت تقاضای فرضی چندناوگانی با jtrrouter (نه ماتریس OD).
 
 توجیه روش (برای گزارش): برای یک تقاطع منفرد، حجم ورودی هر پا + نسبت گردش‌ها
 داده‌ای به‌مراتب کم‌نیازتر از ماتریس OD کامل است و با شواهد قابل‌دسترس (شمارش
 ورودی، برداشت چشمی از تصاویر) سازگارتر است؛ رجوع به CLAUDE.md فاز ۱.
 
-این اسکریپت:
-1. demand/flows.xml (حجم ورودی ۴ پا) را می‌خواند — از قبل دستی نوشته شده.
+این اسکریپت به‌طور کامل برنامه‌نویسی‌شده است (طبق قاعدهٔ سخت ۱، هیچ XML دستی):
+1. demand/flows.xml را از config/assumptions.yml (حجم ورودی هر پا) و
+   config/vtypes.yml (ترکیب ناوگان: سواری/موتورسیکلت/تاکسی/وانت/اتوبوس/کامیونت
+   + پارامترهای رفتاری) می‌سازد.
 2. برای هر پای ورودی، اولین تقاطع واقعی (out-degree >= 2) در مسیر را پیدا
    می‌کند و بر اساس زاویهٔ هندسی، گزینه‌های خروجی را «مستقیم/راست/چپ» طبقه‌بندی
    کرده و نسبت گردش پیش‌فرض (config/assumptions.yml -> turn_ratio_baseline) را
@@ -34,8 +36,15 @@ FLOWS_FILE = ROOT / "demand" / "flows.xml"
 TURNS_FILE = ROOT / "demand" / "turns.xml"
 ROUTES_FILE = ROOT / "demand" / "routes.rou.xml"
 ASSUMPTIONS = ROOT / "config" / "assumptions.yml"
+VTYPES_CFG = ROOT / "config" / "vtypes.yml"
 
 ENTRY_EDGES = ["410247492", "412303657#0", "592154956#0", "610531293#0"]
+ENTRY_ASSUMPTION_KEY = {
+    "410247492": "entry_volume_west",
+    "412303657#0": "entry_volume_east",
+    "592154956#0": "entry_volume_north",
+    "610531293#0": "entry_volume_south",
+}
 
 
 def fix_console_encoding() -> None:
@@ -109,12 +118,58 @@ def build_turns(net, ratios: dict) -> str:
     return "\n".join(lines)
 
 
+def build_vtypes_block(vcfg: dict) -> list[str]:
+    lines = []
+    for vid, params in vcfg["vtypes"].items():
+        attrs = " ".join(f'{k}="{v}"' for k, v in params.items())
+        lines.append(f'    <vType id="{vid}" {attrs}/>')
+    return lines
+
+
+def build_flows_xml(assumptions: dict, vcfg: dict) -> str:
+    lines = ['<?xml version="1.0" encoding="UTF-8"?>',
+              "<!--",
+              "  فاز ۱-۲ — تقاضای فرضی چندناوگانی (Walking Skeleton + ترکیب ناوگان ایران).",
+              "  تولید خودکار توسط src/03_build_demand.py از روی assumptions.yml و vtypes.yml.",
+              "  دستی ویرایش نکن — رجوع به config/assumptions.yml برای منبع هر عدد.",
+              "-->",
+              '<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '
+              'xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">']
+    lines.extend(build_vtypes_block(vcfg))
+
+    demand_cfg = assumptions["demand_baseline_phase1"]
+    fleet = vcfg["fleet_composition"]
+    flow_id = 0
+    approach_name = {"410247492": "west", "412303657#0": "east",
+                      "592154956#0": "north", "610531293#0": "south"}
+    for edge_id in ENTRY_EDGES:
+        total_volume = demand_cfg[ENTRY_ASSUMPTION_KEY[edge_id]]["value"]
+        leg = approach_name[edge_id]
+        for vt_id, vt_cfg in fleet.items():
+            number = round(total_volume * vt_cfg["share"])
+            if number <= 0:
+                continue
+            lines.append(
+                f'    <flow id="from_{leg}_{vt_id}.{flow_id}" type="{vt_id}" '
+                f'from="{edge_id}" begin="0" end="3600" number="{number}"/>'
+            )
+            flow_id += 1
+    lines.append("</routes>")
+    return "\n".join(lines)
+
+
 def main() -> None:
     fix_console_encoding()
     with open(ASSUMPTIONS, "r", encoding="utf-8") as f:
         a = yaml.safe_load(f)
+    with open(VTYPES_CFG, "r", encoding="utf-8") as f:
+        vcfg = yaml.safe_load(f)
     ratios_cfg = a["traffic_control"]["turn_ratio_baseline"]["value"]
     ratios = {"through": ratios_cfg["through"], "right": ratios_cfg["right"], "left": ratios_cfg["left"]}
+
+    flows_xml = build_flows_xml(a, vcfg)
+    FLOWS_FILE.write_text(flows_xml, encoding="utf-8")
+    print(f"[ok] نوشته شد: {FLOWS_FILE}")
 
     net = sumolib.net.readNet(str(NET_FILE))
     turns_xml = build_turns(net, ratios)

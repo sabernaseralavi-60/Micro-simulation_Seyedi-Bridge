@@ -48,7 +48,12 @@ bridge_geometry:
     range_low: 2
     range_high: 3
     sensitivity: true
-    note: "برآورد چشمی از 2025_zoom.png؛ فاقد شمارش دقیق پیکسلی."
+    note: "برآورد چشمی از 2025_zoom.png؛ فاقد شمارش دقیق پیکسلی. **فاز ۲:** OSM
+      این یال را ۲ خط در هر جهت ثبت کرده بود (source: osm) — پس از بازبینی
+      دقیق‌تر 2025_zoom.png (ردیف خودروها به‌وضوح ۳تایی)، با اسکریپت
+      src/02_patch_geometry.py روی plain-XML به ۳ خط اصلاح شد. این دقیقاً همان
+      «فرض صریح + اصلاح برنامه‌نویسی‌شده به‌جای حدس پنهان یا ویرایش دستی
+      netedit» است که قاعدهٔ سخت ۲ پروژه می‌خواهد."
   underpass_orientation:
     value: "north_south"
     unit: categorical
@@ -105,6 +110,21 @@ bridge_geometry:
     note: "پایه‌ها در هیچ تصویری با قطعیت بالا دیده نمی‌شوند؛ فرض مهندسی استاندارد برای عرض ایمنی حاشیهٔ پایه از لبهٔ سواره‌رو هم‌سطح."
 
 traffic_control:
+  weave_merge_junction_model:
+    value: "zipper"
+    unit: categorical
+    source: engineering_judgement
+    range_low: null
+    range_high: null
+    sensitivity: true
+    note: "فاز ۲: تقاطع‌های ادغام (۲ ورودی/۱ خروجی) درون شعاع ۱۲۰ متری مرکز
+      میدانچهٔ ویوینگ زیر پل، از priority (پیش‌فرض netconvert بر مبنای رتبهٔ
+      کلاس راه) به zipper تغییر یافتند — طبق توصیهٔ صریح CLAUDE.md برای
+      نمایش رفتار واقعی «هر که زودتر رسید» در نبود کانالیزاسیون/چراغ. اعمال
+      شده در src/02_patch_geometry.py (۹ تقاطع). حساسیت: نوع junction model
+      می‌تواند به‌طور محسوسی روی تأخیر و SSM اثر بگذارد؛ در فاز ۳ به‌عنوان
+      متغیر حساسیت کاندید (priority در برابر zipper در برابر right_before_left)
+      آزمایش شود."
   turn_ratio_baseline:
     value: {through: 70, right: 15, left: 15}
     unit: percent
@@ -188,4 +208,41 @@ network_scope:
       نشود؛ قابل بازگشت با تغییر --keep-edges.by-type در src/01_build_network.py."
 
 fleet_and_behavior:
-  note: "این بخش در فاز ۲ تکمیل می‌شود (config/vtypes.yml)."
+  note: "اعداد کامل در config/vtypes.yml؛ این‌جا فقط منبع و حساسیت هر گروه پارامتر ثبت می‌شود."
+  motorcycle_share:
+    value: 0.30
+    unit: fraction
+    source: engineering_judgement
+    range_low: 0.15
+    range_high: 0.45
+    sensitivity: true
+    note: "سهم بالای موتورسیکلت از مشاهدهٔ کیفی تصاویر، نه شمارش. اولویت
+      #۱ برنامهٔ کالیبراسیون (CLAUDE.md §۵) — بدون این عدد واقعی، هیچ نتیجهٔ
+      ایمنی/ظرفیتی این مطالعه قابل‌اتکا نیست."
+  car_following_aggressiveness:
+    value: "tau/minGap کاهش‌یافته نسبت به پیش‌فرض SUMO (رجوع به config/vtypes.yml)"
+    unit: categorical
+    source: engineering_judgement
+    range_low: null
+    range_high: null
+    sensitivity: true
+    note: "فاصلهٔ زمانی پیرو (tau) و حداقل فاصله (minGap) برای همهٔ رده‌های
+      وسیله پایین‌تر از پیش‌فرض SUMO گذاشته شده تا فرهنگ رانندگی نزدیک‌به‌هم را
+      نشان دهد؛ در فاز ۳ به‌عنوان متغیر حساسیت سراسری (Sobol/فاکتوریل) آزموده
+      می‌شود."
+  junction_model_aggressiveness:
+    value: "jmIgnoreFoeProb و lcAssertive بالاتر از پیش‌فرض، به‌ویژه برای موتورسیکلت"
+    unit: categorical
+    source: engineering_judgement
+    range_low: null
+    range_high: null
+    sensitivity: true
+  sublane_lateral_resolution:
+    value: 0.8
+    unit: meter
+    source: engineering_judgement
+    range_low: 0.5
+    range_high: 1.0
+    sensitivity: true
+    note: "فعال‌سازی مدل sublane (--lateral-resolution) برای بازنمایی فیلترینگ
+      موتورسیکلت بین خطوط زیر پل — طبق تأکید صریح CLAUDE.md فاز ۲."

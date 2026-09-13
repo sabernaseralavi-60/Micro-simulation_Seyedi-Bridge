@@ -1,0 +1,113 @@
+# فاز ۲ — ترکیب ناوگان و پارامترهای رفتاری، متناسب با تقاطع شهری ایران.
+#
+# همهٔ مقادیر رفتاری «تهاجمی‌تر از پیش‌فرض SUMO» به‌صراحت در
+# config/assumptions.yml با source/range/sensitivity ثبت شده‌اند (بخش
+# fleet_and_behavior). این فایل فقط ساختار قابل‌مصرف برای src/03_build_demand.py
+# است؛ خودِ اعداد از assumptions.yml نمی‌آیند چون YAML تو-در-تو پیچیده می‌شود —
+# در عوض این دو فایل باید هم‌گام نگه داشته شوند (رجوع به تست
+# tests/test_vtypes_consistency.py در فاز بعد).
+#
+# منبع سهم ناوگان: قضاوت مهندسی برای یک آرتریال شهری میان‌اندازهٔ ایرانی با
+# سهم بالای موتورسیکلت (مشاهدهٔ تصاویر ۲۰۱۷/۲۰۲۵: موتورسیکلت به‌وضوح در جریان
+# ترافیک زیرپل حضور دارد) — نه شمارش میدانی. اولویت بحرانی برنامهٔ کالیبراسیون
+# (CLAUDE.md §۵) دقیقاً همین سهم است.
+
+fleet_composition:
+  passenger: {share: 0.55, vclass: passenger, source: engineering_judgement}
+  motorcycle: {share: 0.30, vclass: motorcycle, source: engineering_judgement}
+  taxi: {share: 0.08, vclass: taxi, source: engineering_judgement}
+  pickup: {share: 0.04, vclass: delivery, source: engineering_judgement}
+  bus: {share: 0.01, vclass: bus, source: engineering_judgement}
+  truck_light: {share: 0.02, vclass: truck, source: engineering_judgement}
+
+vtypes:
+  passenger:
+    vClass: passenger
+    length: 4.5
+    width: 1.8
+    maxSpeed: 41.7   # 150 km/h
+    accel: 2.6
+    decel: 4.5
+    sigma: 0.6        # پیش‌فرض SUMO: ۰.۵ — کمی بالاتر (رانندگی کمتر یکنواخت)
+    tau: 0.9          # پیش‌فرض SUMO: ۱.۰ — فاصلهٔ زمانی پیرو کوتاه‌تر
+    minGap: 2.0        # پیش‌فرض SUMO: ۲.۵
+    impatience: 0.5    # پیش‌فرض SUMO: ۰.۰
+    jmIgnoreFoeProb: 0.10
+    lcAssertive: 1.5   # پیش‌فرض SUMO: ۱.۰
+    lcSpeedGain: 1.5
+  motorcycle:
+    vClass: motorcycle
+    length: 2.0
+    width: 0.8
+    maxSpeed: 36.1     # 130 km/h
+    accel: 3.5
+    decel: 5.0
+    sigma: 0.8
+    tau: 0.7
+    minGap: 1.2
+    impatience: 0.8
+    jmIgnoreFoeProb: 0.35   # فیلترینگ/بی‌اعتنایی بالاتر به حق‌تقدم — رفتار مشاهده‌شده در تصاویر
+    lcAssertive: 3.0        # لین‌چنج/فیلترینگ تهاجمی بین خطوط
+    lcSpeedGain: 3.0
+    lcSublane: 3.0
+    latAlignment: "arbitrary"   # برای بازنمایی فیلترینگ آزاد در عرض خط (مدل sublane)
+  taxi:
+    vClass: taxi
+    length: 4.5
+    width: 1.8
+    maxSpeed: 41.7
+    accel: 2.8
+    decel: 4.8
+    sigma: 0.7
+    tau: 0.8
+    minGap: 1.8
+    impatience: 0.9    # توقف/تخلیهٔ ناگهانی مسافر، تهاجمی‌ترین سواری‌ها
+    jmIgnoreFoeProb: 0.20
+    lcAssertive: 2.0
+    lcSpeedGain: 2.0
+  pickup:
+    vClass: delivery
+    length: 5.0
+    width: 1.9
+    maxSpeed: 33.3
+    accel: 2.2
+    decel: 4.2
+    sigma: 0.6
+    tau: 1.0
+    minGap: 2.2
+    impatience: 0.4
+    jmIgnoreFoeProb: 0.10
+    lcAssertive: 1.3
+  bus:
+    vClass: bus
+    length: 12.0
+    width: 2.55
+    maxSpeed: 25.0
+    accel: 1.2
+    decel: 3.5
+    sigma: 0.4
+    tau: 1.3
+    minGap: 2.5
+    impatience: 0.2
+    jmIgnoreFoeProb: 0.02
+    lcAssertive: 0.8
+  truck_light:
+    vClass: truck
+    length: 7.0
+    width: 2.3
+    maxSpeed: 27.8
+    accel: 1.5
+    decel: 3.8
+    sigma: 0.5
+    tau: 1.2
+    minGap: 2.5
+    impatience: 0.3
+    jmIgnoreFoeProb: 0.05
+    lcAssertive: 1.0
+
+sublane:
+  enabled: true
+  lateral_resolution: 0.8   # متر — طبق CLAUDE.md فاز ۲، برای بازنمایی فیلترینگ موتورسیکلت
+  source: engineering_judgement
+  note: "بدون مدل sublane، فیلترینگ موتورسیکلت بین خطوط قابل‌بازنمایی نیست و
+    ترافیک شهری ایران غیرواقعی می‌شود — عیناً طبق تأکید CLAUDE.md."

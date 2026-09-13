@@ -11,9 +11,9 @@ export SUMO_HOME := $(SUMO_HOME_DIR)
 export PYTHONIOENCODING := utf-8
 export QUARTO_PYTHON := $(CURDIR)/$(PYTHON)
 
-.PHONY: all check-env sketch network demand run analyze figures report publish clean
+.PHONY: all check-env sketch network patch-geometry demand run analyze figures report publish clean
 
-all: check-env sketch network demand run analyze figures report
+all: check-env sketch network patch-geometry demand run analyze figures report
 
 ## بررسی نصب‌بودن ابزارهای لازم (فاز ۰، گام ۱)
 check-env:
@@ -36,7 +36,11 @@ sketch:
 network:
 	$(PYTHON) src/01_build_network.py
 
-## فاز ۱: تقاضای jtrrouter (حجم ورودی + نسبت گردش) از روی هندسهٔ شبکه
+## فاز ۲: اصلاحات هندسی مبتنی بر تصویر روی plain-XML (خط عرشه، junction model) + بازسازی شبکه
+patch-geometry:
+	$(PYTHON) src/02_patch_geometry.py
+
+## فاز ۱-۲: تقاضای jtrrouter چندناوگانی (حجم ورودی + نسبت گردش + ترکیب ناوگان)
 demand:
 	$(PYTHON) src/03_build_demand.py
 

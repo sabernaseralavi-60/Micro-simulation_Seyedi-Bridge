@@ -1,100 +1,51 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version='1.0' encoding='UTF-8'?>
+<nodes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.20" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/nodes_file.xsd">
+    <location netOffset="-504905.47,-3351132.06" convBoundary="0.00,0.00,6460.69,4818.87" origBoundary="57.051025,30.291857,57.118195,30.335362" projParameter="+proj=utm +zone=40 +ellps=WGS84 +datum=WGS84 +units=m +no_defs" />
 
-<!-- generated on 2026-09-13T22:42:53.939282+03:30 by Eclipse SUMO netconvert 1.27.1
-<netconvertConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
-
-    <input>
-        <type-files value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\config\typemap\urban_ir.typ.xml"/>
-        <osm-files value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\data\raw\osm\seyedi_bbox.osm.xml"/>
-    </input>
-
-    <output>
-        <output-file value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\network\seyedi.net.xml"/>
-        <plain-output-prefix value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\network\plain\seyedi"/>
-    </output>
-
-    <projection>
-        <proj.utm value="true"/>
-    </projection>
-
-    <processing>
-        <geometry.remove value="true"/>
-        <lefthand value="false"/>
-    </processing>
-
-    <tls_building>
-        <tls.discard-simple value="true"/>
-    </tls_building>
-
-    <ramp_guessing>
-        <ramps.guess value="true"/>
-    </ramp_guessing>
-
-    <edge_removal>
-        <remove-edges.by-vclass value="pedestrian,bicycle,tram,rail"/>
-        <keep-edges.by-type value="highway.trunk,highway.trunk_link,highway.primary,highway.primary_link,highway.secondary,highway.secondary_link"/>
-    </edge_removal>
-
-    <junctions>
-        <no-turnarounds value="true"/>
-        <junctions.join value="true"/>
-        <junctions.join-dist value="12"/>
-    </junctions>
-
-    <formats>
-        <osm.layer-elevation value="4"/>
-    </formats>
-
-</netconvertConfiguration>
--->
-
-<nodes version="1.20" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/nodes_file.xsd">
-    <location netOffset="-504905.47,-3351132.06" convBoundary="0.00,0.00,6460.69,4818.87" origBoundary="57.051025,30.291857,57.118195,30.335362" projParameter="+proj=utm +zone=40 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"/>
-
-    <node id="10796684374" x="3266.45" y="2733.00" type="priority"/>
-    <node id="1370055215" x="6446.33" y="0.99" z="4.00" type="dead_end"/>
-    <node id="1370055236" x="6460.69" y="0.00" z="4.00" type="dead_end"/>
-    <node id="1399479704" x="0.00" y="2884.45" z="4.00" type="dead_end"/>
-    <node id="4120846830" x="3333.42" y="2754.95" type="priority"/>
-    <node id="4120846834" x="3209.38" y="2693.80" type="priority"/>
-    <node id="4120854403" x="3281.29" y="2833.77" type="priority"/>
-    <node id="4120854413" x="3599.59" y="2650.85" z="4.00" type="priority"/>
-    <node id="4120854414" x="3591.28" y="2635.58" z="4.00" type="priority"/>
-    <node id="412303657#0-AddedOffRampNode" x="3688.00" y="2604.13" z="4.00" type="priority"/>
-    <node id="4231522683" x="4181.81" y="4800.03" type="dead_end"/>
-    <node id="4231522684" x="4162.64" y="4818.87" type="dead_end"/>
-    <node id="5091632826" x="3260.15" y="2841.64" type="priority"/>
-    <node id="526836458#1-AddedOnRampNode" x="2713.99" y="2935.99" z="4.00" type="priority"/>
-    <node id="526836461#0-AddedOnRampNode" x="3678.95" y="2587.84" z="4.00" type="priority"/>
-    <node id="5919142482" x="2867.56" y="2891.10" z="4.00" type="priority"/>
-    <node id="5919142991" x="2839.13" y="2880.54" z="4.00" type="dead_end"/>
-    <node id="592154956#0-AddedOffRampNode" x="3293.04" y="2936.08" type="priority"/>
-    <node id="5924857047" x="3299.44" y="2763.01" type="priority"/>
-    <node id="6053976952" x="3205.70" y="2785.82" type="priority"/>
-    <node id="6053976954" x="3219.05" y="2782.26" type="priority"/>
-    <node id="6053976955" x="3279.97" y="2766.59" type="priority"/>
-    <node id="6053976957" x="3255.25" y="2735.81" type="priority"/>
-    <node id="6053976958" x="3199.64" y="2748.63" type="priority"/>
-    <node id="610531293#0-AddedOffRampNode" x="3203.36" y="2623.28" type="priority"/>
-    <node id="627154371#0-AddedOffRampNode" x="3044.16" y="2799.95" type="priority"/>
-    <node id="627154375#0-AddedOffRampNode" x="3438.21" y="2722.67" z="1.44" type="priority"/>
-    <node id="627154378#1-AddedOnRampNode" x="3428.04" y="2692.34" z="1.42" type="priority"/>
-    <node id="627167744#2-AddedOnRampNode" x="3315.40" y="2927.77" type="priority"/>
-    <node id="6403676802" x="3270.82" y="2797.38" type="priority"/>
-    <node id="6403676806" x="3248.38" y="2803.52" type="priority"/>
-    <node id="6711509157" x="3151.09" y="2764.21" type="priority"/>
-    <node id="6711509161" x="3184.50" y="2753.23" type="priority"/>
-    <node id="6711509162" x="3195.59" y="2788.73" type="priority"/>
-    <node id="6711509163" x="3138.78" y="2767.70" type="priority"/>
-    <node id="6711509164" x="3152.05" y="2801.82" type="priority"/>
-    <node id="6711509165" x="3278.55" y="2729.97" type="priority"/>
-    <node id="6711509166" x="3331.56" y="2718.19" type="priority"/>
-    <node id="6711509167" x="3342.74" y="2752.31" type="priority"/>
-    <node id="6711509168" x="3218.38" y="2721.51" type="priority"/>
-    <node id="6711509176" x="3236.86" y="2717.45" type="priority"/>
-    <node id="7010500843" x="3247.31" y="2688.76" type="dead_end"/>
-    <node id="7447986641" x="2804.73" y="2891.92" type="dead_end"/>
-    <node id="7447986643" x="2810.42" y="2910.08" z="4.00" type="priority"/>
-    <node id="9787251415" x="3021.23" y="2100.69" type="dead_end"/>
-    <node id="9884439659" x="3005.04" y="2109.17" type="dead_end"/>
+    <node id="10796684374" x="3266.45" y="2733.00" type="zipper" />
+    <node id="1370055215" x="6446.33" y="0.99" z="4.00" type="dead_end" />
+    <node id="1370055236" x="6460.69" y="0.00" z="4.00" type="dead_end" />
+    <node id="1399479704" x="0.00" y="2884.45" z="4.00" type="dead_end" />
+    <node id="4120846830" x="3333.42" y="2754.95" type="priority" />
+    <node id="4120846834" x="3209.38" y="2693.80" type="zipper" />
+    <node id="4120854403" x="3281.29" y="2833.77" type="zipper" />
+    <node id="4120854413" x="3599.59" y="2650.85" z="4.00" type="priority" />
+    <node id="4120854414" x="3591.28" y="2635.58" z="4.00" type="priority" />
+    <node id="412303657#0-AddedOffRampNode" x="3688.00" y="2604.13" z="4.00" type="priority" />
+    <node id="4231522683" x="4181.81" y="4800.03" type="dead_end" />
+    <node id="4231522684" x="4162.64" y="4818.87" type="dead_end" />
+    <node id="5091632826" x="3260.15" y="2841.64" type="priority" />
+    <node id="526836458#1-AddedOnRampNode" x="2713.99" y="2935.99" z="4.00" type="priority" />
+    <node id="526836461#0-AddedOnRampNode" x="3678.95" y="2587.84" z="4.00" type="priority" />
+    <node id="5919142482" x="2867.56" y="2891.10" z="4.00" type="priority" />
+    <node id="5919142991" x="2839.13" y="2880.54" z="4.00" type="dead_end" />
+    <node id="592154956#0-AddedOffRampNode" x="3293.04" y="2936.08" type="priority" />
+    <node id="5924857047" x="3299.44" y="2763.01" type="zipper" />
+    <node id="6053976952" x="3205.70" y="2785.82" type="priority" />
+    <node id="6053976954" x="3219.05" y="2782.26" type="zipper" />
+    <node id="6053976955" x="3279.97" y="2766.59" type="priority" />
+    <node id="6053976957" x="3255.25" y="2735.81" type="zipper" />
+    <node id="6053976958" x="3199.64" y="2748.63" type="priority" />
+    <node id="610531293#0-AddedOffRampNode" x="3203.36" y="2623.28" type="priority" />
+    <node id="627154371#0-AddedOffRampNode" x="3044.16" y="2799.95" type="priority" />
+    <node id="627154375#0-AddedOffRampNode" x="3438.21" y="2722.67" z="1.44" type="priority" />
+    <node id="627154378#1-AddedOnRampNode" x="3428.04" y="2692.34" z="1.42" type="priority" />
+    <node id="627167744#2-AddedOnRampNode" x="3315.40" y="2927.77" type="priority" />
+    <node id="6403676802" x="3270.82" y="2797.38" type="zipper" />
+    <node id="6403676806" x="3248.38" y="2803.52" type="priority" />
+    <node id="6711509157" x="3151.09" y="2764.21" type="priority" />
+    <node id="6711509161" x="3184.50" y="2753.23" type="zipper" />
+    <node id="6711509162" x="3195.59" y="2788.73" type="priority" />
+    <node id="6711509163" x="3138.78" y="2767.70" type="priority" />
+    <node id="6711509164" x="3152.05" y="2801.82" type="priority" />
+    <node id="6711509165" x="3278.55" y="2729.97" type="priority" />
+    <node id="6711509166" x="3331.56" y="2718.19" type="priority" />
+    <node id="6711509167" x="3342.74" y="2752.31" type="priority" />
+    <node id="6711509168" x="3218.38" y="2721.51" type="zipper" />
+    <node id="6711509176" x="3236.86" y="2717.45" type="priority" />
+    <node id="7010500843" x="3247.31" y="2688.76" type="dead_end" />
+    <node id="7447986641" x="2804.73" y="2891.92" type="dead_end" />
+    <node id="7447986643" x="2810.42" y="2910.08" z="4.00" type="priority" />
+    <node id="9787251415" x="3021.23" y="2100.69" type="dead_end" />
+    <node id="9884439659" x="3005.04" y="2109.17" type="dead_end" />
 </nodes>
