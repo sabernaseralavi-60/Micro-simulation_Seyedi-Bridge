@@ -2,8 +2,9 @@
 # Makefile اصلی خط لولهٔ تکرارپذیر — طبق CLAUDE.md §3.1 هر شکل/جدول/عدد گزارش باید
 # با `make all` از صفر بازتولید شود.
 #
-# فاز ۱ کامل شد: network -> demand -> run -> analyze -> figures -> report
-# (هر سه فرمت، هر دو زبان). چند-سناریو/چند-seed در فاز ۳ به run/analyze اضافه می‌شود.
+# فاز ۱-۳ کامل شد: network -> patch-geometry -> demand -> run -> analyze -> figures -> report
+# (هر سه فرمت، هر دو زبان). `run` اکنون سناریوی S0 را در ۵ سطح تقاضا (λ) × ۱۰ seed
+# (طبق قاعدهٔ سخت ۵) اجرا می‌کند — حدود ۱۰ دقیقه. سناریوهای S1-S5 در فاز ۴ اضافه می‌شوند.
 
 PYTHON := .venv/Scripts/python.exe
 SUMO_HOME_DIR := $(CURDIR)/.venv/Lib/site-packages/sumo
@@ -40,19 +41,19 @@ network:
 patch-geometry:
 	$(PYTHON) src/02_patch_geometry.py
 
-## فاز ۱-۲: تقاضای jtrrouter چندناوگانی (حجم ورودی + نسبت گردش + ترکیب ناوگان)
+## فاز ۱-۲: تقاضای jtrrouter چندناوگانی، تک‌اجرا (λ=۱, seed=۴۲) — برای بازرسی چشمی/netedit
 demand:
 	$(PYTHON) src/03_build_demand.py
 
-## فاز ۱: اجرای سناریوی S0 (تک-seed، Walking Skeleton)
+## فاز ۳: اجرای سناریوی S0 در ۵ سطح λ × ۱۰ seed (۵۰ اجرا، ~۱۰ دقیقه)
 run:
 	$(PYTHON) src/04_run_experiments.py
 
-## فاز ۱: استخراج KPI به outputs/tables/*.{csv,parquet}
+## فاز ۳: استخراج KPI چند-λ/چند-seed + میانگین±CI۹۵٪ به outputs/tables/*.{csv,parquet}
 analyze:
 	$(PYTHON) src/05_extract_kpis.py
 
-## فاز ۱: نمودار KPI
+## فاز ۳: نمودار KPI به تفکیک پا + نمودار حساسیت به λ
 figures:
 	$(PYTHON) src/07_figures.py
 

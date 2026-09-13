@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-فاز ۱-۲ — ساخت تقاضای فرضی چندناوگانی با jtrrouter (نه ماتریس OD).
+فاز ۱-۳ — ساخت تقاضای فرضی چندناوگانی با jtrrouter (نه ماتریس OD).
 
 توجیه روش (برای گزارش): برای یک تقاطع منفرد، حجم ورودی هر پا + نسبت گردش‌ها
 داده‌ای به‌مراتب کم‌نیازتر از ماتریس OD کامل است و با شواهد قابل‌دسترس (شمارش
@@ -8,19 +8,20 @@
 
 این اسکریپت به‌طور کامل برنامه‌نویسی‌شده است (طبق قاعدهٔ سخت ۱، هیچ XML دستی):
 1. demand/flows.xml را از config/assumptions.yml (حجم ورودی هر پا) و
-   config/vtypes.yml (ترکیب ناوگان: سواری/موتورسیکلت/تاکسی/وانت/اتوبوس/کامیونت
-   + پارامترهای رفتاری) می‌سازد.
+   config/vtypes.yml (ترکیب ناوگان) می‌سازد — با امکان مقیاس‌دهی تقاضا (λ)،
+   تغییر سهم موتورسیکلت، تغییر ضریب tau، برای تحلیل حساسیت فاز ۳.
 2. برای هر پای ورودی، اولین تقاطع واقعی (out-degree >= 2) در مسیر را پیدا
    می‌کند و بر اساس زاویهٔ هندسی، گزینه‌های خروجی را «مستقیم/راست/چپ» طبقه‌بندی
-   کرده و نسبت گردش پیش‌فرض (config/assumptions.yml -> turn_ratio_baseline) را
-   به آن‌ها اختصاص می‌دهد -> demand/turns.xml.
-3. jtrrouter را با flows.xml + turns.xml (+ turn-defaults به‌عنوان fallback در
-   سایر تقاطع‌های پایین‌دست) اجرا می‌کند -> demand/routes.rou.xml.
+   کرده و نسبت گردش (با امکان بازتنظیم سهم چپ برای تحلیل حساسیت) را به آن‌ها
+   اختصاص می‌دهد -> demand/turns.xml.
+3. jtrrouter را با flows.xml + turns.xml اجرا می‌کند -> routes.rou.xml.
 
-اجرا: `make demand`
+اجرا (تک‌اجرا، پیش‌فرض‌های مبنا): `make demand`
+اجرا (پارامتری، برای رانر چند-seed/λ فاز ۳): رجوع به src/04_run_experiments.py
 """
 from __future__ import annotations
 
+import argparse
 import math
 import pathlib
 import subprocess
@@ -118,32 +119,57 @@ def build_turns(net, ratios: dict) -> str:
     return "\n".join(lines)
 
 
-def build_vtypes_block(vcfg: dict) -> list[str]:
+def build_vtypes_block(vcfg: dict, tau_multiplier: float = 1.0) -> list[str]:
     lines = []
     for vid, params in vcfg["vtypes"].items():
+        params = dict(params)
+        if "tau" in params:
+            params["tau"] = round(params["tau"] * tau_multiplier, 3)
         attrs = " ".join(f'{k}="{v}"' for k, v in params.items())
         lines.append(f'    <vType id="{vid}" {attrs}/>')
     return lines
 
 
-def build_flows_xml(assumptions: dict, vcfg: dict) -> str:
+def scaled_fleet_composition(vcfg: dict, motorcycle_share: float | None) -> dict:
+    """در صورت override سهم موتورسیکلت (برای تحلیل حساسیت)، بقیهٔ سهم‌ها را
+    متناسب کوچک/بزرگ می‌کند تا مجموع همچنان ۱ بماند."""
+    fleet = {k: dict(v) for k, v in vcfg["fleet_composition"].items()}
+    if motorcycle_share is None:
+        return fleet
+    old_moto = fleet["motorcycle"]["share"]
+    old_rest = 1.0 - old_moto
+    new_rest = 1.0 - motorcycle_share
+    scale = (new_rest / old_rest) if old_rest > 1e-9 else 1.0
+    for k, v in fleet.items():
+        if k == "motorcycle":
+            v["share"] = motorcycle_share
+        else:
+            v["share"] = v["share"] * scale
+    return fleet
+
+
+def build_flows_xml(assumptions: dict, vcfg: dict, lambda_scale: float = 1.0,
+                     motorcycle_share: float | None = None,
+                     tau_multiplier: float = 1.0) -> str:
     lines = ['<?xml version="1.0" encoding="UTF-8"?>',
-              "<!--",
-              "  فاز ۱-۲ — تقاضای فرضی چندناوگانی (Walking Skeleton + ترکیب ناوگان ایران).",
-              "  تولید خودکار توسط src/03_build_demand.py از روی assumptions.yml و vtypes.yml.",
-              "  دستی ویرایش نکن — رجوع به config/assumptions.yml برای منبع هر عدد.",
-              "-->",
-              '<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '
-              'xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">']
-    lines.extend(build_vtypes_block(vcfg))
+             "<!--",
+             "  فاز ۱-۳ — تقاضای فرضی چندناوگانی (Walking Skeleton + ترکیب ناوگان ایران).",
+             "  تولید خودکار توسط src/03_build_demand.py از روی assumptions.yml و vtypes.yml.",
+             f"  lambda_scale={lambda_scale}, motorcycle_share={motorcycle_share}, tau_multiplier={tau_multiplier}",
+             "  دستی ویرایش نکن — رجوع به config/assumptions.yml برای منبع هر عدد.",
+             "-->",
+             '<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '
+             'xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">']
+    lines.extend(build_vtypes_block(vcfg, tau_multiplier=tau_multiplier))
 
     demand_cfg = assumptions["demand_baseline_phase1"]
-    fleet = vcfg["fleet_composition"]
+    fleet = scaled_fleet_composition(vcfg, motorcycle_share)
     flow_id = 0
     approach_name = {"410247492": "west", "412303657#0": "east",
                       "592154956#0": "north", "610531293#0": "south"}
     for edge_id in ENTRY_EDGES:
-        total_volume = demand_cfg[ENTRY_ASSUMPTION_KEY[edge_id]]["value"]
+        base_volume = demand_cfg[ENTRY_ASSUMPTION_KEY[edge_id]]["value"]
+        total_volume = base_volume * lambda_scale
         leg = approach_name[edge_id]
         for vt_id, vt_cfg in fleet.items():
             number = round(total_volume * vt_cfg["share"])
@@ -158,39 +184,82 @@ def build_flows_xml(assumptions: dict, vcfg: dict) -> str:
     return "\n".join(lines)
 
 
-def main() -> None:
-    fix_console_encoding()
-    with open(ASSUMPTIONS, "r", encoding="utf-8") as f:
-        a = yaml.safe_load(f)
-    with open(VTYPES_CFG, "r", encoding="utf-8") as f:
-        vcfg = yaml.safe_load(f)
-    ratios_cfg = a["traffic_control"]["turn_ratio_baseline"]["value"]
-    ratios = {"through": ratios_cfg["through"], "right": ratios_cfg["right"], "left": ratios_cfg["left"]}
-
-    flows_xml = build_flows_xml(a, vcfg)
-    FLOWS_FILE.write_text(flows_xml, encoding="utf-8")
-    print(f"[ok] نوشته شد: {FLOWS_FILE}")
-
-    net = sumolib.net.readNet(str(NET_FILE))
-    turns_xml = build_turns(net, ratios)
-    TURNS_FILE.write_text(turns_xml, encoding="utf-8")
-    print(f"[ok] نوشته شد: {TURNS_FILE}")
-
+def run_jtrrouter(flows_path: pathlib.Path, turns_path: pathlib.Path,
+                   routes_path: pathlib.Path, seed: int) -> None:
     jtrrouter = SUMO_HOME / "bin" / "jtrrouter.exe"
     cmd = [
         str(jtrrouter),
         "-n", str(NET_FILE),
-        "-r", str(FLOWS_FILE),
-        "-t", str(TURNS_FILE),
-        "-o", str(ROUTES_FILE),
-        "--turn-defaults", "15,70,15",  # fallback برای تقاطع‌های پایین‌دست بدون turns.xml
+        "-r", str(flows_path),
+        "-t", str(turns_path),
+        "-o", str(routes_path),
+        "--turn-defaults", "15,70,15",
         "--accept-all-destinations",
-        "--seed", "42",
+        "--seed", str(seed),
         "--ignore-errors",
     ]
-    print("[run]", " ".join(cmd))
-    subprocess.run(cmd, check=True)
-    print(f"[ok] نوشته شد: {ROUTES_FILE}")
+    subprocess.run(cmd, check=True, capture_output=True, text=True)
+
+
+def generate_demand(assumptions: dict, vcfg: dict, *, lambda_scale: float = 1.0,
+                     seed: int = 42, left_turn_share: float | None = None,
+                     motorcycle_share: float | None = None,
+                     tau_multiplier: float = 1.0,
+                     flows_path: pathlib.Path = FLOWS_FILE,
+                     turns_path: pathlib.Path = TURNS_FILE,
+                     routes_path: pathlib.Path = ROUTES_FILE) -> None:
+    """تابع اصلی قابل‌فراخوانی از رانر فاز ۳ (چند-λ/چند-seed/حساسیت)."""
+    ratios_cfg = assumptions["traffic_control"]["turn_ratio_baseline"]["value"]
+    if left_turn_share is None:
+        ratios = {"through": ratios_cfg["through"], "right": ratios_cfg["right"], "left": ratios_cfg["left"]}
+    else:
+        left_pct = left_turn_share * 100
+        remaining = 100 - left_pct
+        old_remaining = ratios_cfg["through"] + ratios_cfg["right"]
+        scale = remaining / old_remaining if old_remaining > 1e-9 else 1.0
+        ratios = {"through": ratios_cfg["through"] * scale,
+                  "right": ratios_cfg["right"] * scale,
+                  "left": left_pct}
+
+    flows_xml = build_flows_xml(assumptions, vcfg, lambda_scale=lambda_scale,
+                                 motorcycle_share=motorcycle_share, tau_multiplier=tau_multiplier)
+    flows_path.write_text(flows_xml, encoding="utf-8")
+
+    net = sumolib.net.readNet(str(NET_FILE))
+    turns_xml = build_turns(net, ratios)
+    turns_path.write_text(turns_xml, encoding="utf-8")
+
+    run_jtrrouter(flows_path, turns_path, routes_path, seed)
+
+
+def parse_args():
+    p = argparse.ArgumentParser(description="ساخت تقاضای jtrrouter (تک‌اجرا یا پارامتری)")
+    p.add_argument("--lambda-scale", type=float, default=1.0)
+    p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--left-turn-share", type=float, default=None)
+    p.add_argument("--motorcycle-share", type=float, default=None)
+    p.add_argument("--tau-multiplier", type=float, default=1.0)
+    p.add_argument("--out-routes", type=pathlib.Path, default=ROUTES_FILE)
+    return p.parse_args()
+
+
+def main() -> None:
+    fix_console_encoding()
+    args = parse_args()
+    with open(ASSUMPTIONS, "r", encoding="utf-8") as f:
+        a = yaml.safe_load(f)
+    with open(VTYPES_CFG, "r", encoding="utf-8") as f:
+        vcfg = yaml.safe_load(f)
+
+    generate_demand(
+        a, vcfg,
+        lambda_scale=args.lambda_scale, seed=args.seed,
+        left_turn_share=args.left_turn_share, motorcycle_share=args.motorcycle_share,
+        tau_multiplier=args.tau_multiplier, routes_path=args.out_routes,
+    )
+    print(f"[ok] نوشته شد: {FLOWS_FILE}")
+    print(f"[ok] نوشته شد: {TURNS_FILE}")
+    print(f"[ok] نوشته شد: {args.out_routes}")
 
 
 if __name__ == "__main__":

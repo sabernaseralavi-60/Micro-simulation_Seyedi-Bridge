@@ -21,6 +21,10 @@ scenarios/**/*.xml
 **/fcd*.xml
 **/emission*.xml
 
+# per-vehicle multi-run table (130k+ rows, effectively raw, not a summary) —
+# only the per-seed and per-lambda aggregated summaries are committed
+outputs/tables/*_multirun_tripinfo.parquet
+
 # --- Quarto ---
 /report/_site/
 /report/_output/

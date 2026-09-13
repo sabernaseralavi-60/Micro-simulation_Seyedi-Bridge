@@ -199,6 +199,44 @@ traffic_control:
       می‌شود. مدل S0 باید junction model را priority/right_before_left بگذارد،
       نه tls یا ممنوعیت گردش."
 
+experiment_design:
+  demand_scale_levels:
+    value: [0.6, 0.8, 1.0, 1.2, 1.4]
+    unit: fraction
+    source: engineering_judgement
+    range_low: null
+    range_high: null
+    sensitivity: false
+    note: "ضریب مقیاس تقاضا λ طبق CLAUDE.md فاز ۳ — روی همهٔ سناریوها اجرا
+      می‌شود تا نقطهٔ شکست هر گزینه و پایداری رتبه‌بندی در بازهٔ تقاضا مشخص شود."
+  n_seeds_per_condition:
+    value: 10
+    unit: count
+    source: engineering_judgement
+    range_low: 10
+    range_high: 30
+    sensitivity: false
+    note: "حداقل قاعدهٔ سخت ۵ پروژه؛ همان seed (۱..۱۰) هم به jtrrouter (برای
+      تصادفی‌سازی انتساب گردش بر مبنای نسبت‌ها) و هم به sumo (برای تصادفی‌سازی
+      رفتار تعقیب/تغییرخط، sigma) داده می‌شود تا هر seed یک تکرار مستقل و
+      کاملاً قابل‌بازتولید باشد."
+  global_sensitivity_factors:
+    value:
+      - {name: "demand_scale", low: 0.6, high: 1.4}
+      - {name: "left_turn_share", low: 0.10, high: 0.25}
+      - {name: "motorcycle_share", low: 0.15, high: 0.45}
+      - {name: "tau_multiplier", low: 0.8, high: 1.2}
+      - {name: "turning_radius_multiplier", low: 0.8, high: 1.2}
+    unit: mixed
+    source: engineering_judgement
+    range_low: null
+    range_high: null
+    sensitivity: true
+    note: "پنج عامل تحلیل حساسیت سراسری طبق CLAUDE.md فاز ۳ (§۴). طرح فعلی:
+      عاملی کسری دوسطحی (۲^۵=۳۲ ترکیب) + ۵ seed هر ترکیب = ۱۶۰ اجرا برای S0؛
+      اگر بودجهٔ محاسباتی فاز ۴ اجازه داد، به نمونه‌گیری Sobol روی همهٔ
+      سناریوها ارتقا می‌یابد."
+
 checkpoint_log:
   checkpoint_1:
     date: "1405-06-22"

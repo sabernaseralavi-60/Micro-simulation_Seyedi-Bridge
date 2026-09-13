@@ -1,31 +1,35 @@
 ---
 title: "Seyedi Under-Bridge Intersection Traffic Reorganization"
-subtitle: "Phase 2 Report — Geometric Fidelity and Fleet Composition"
+subtitle: "Phase 3 Report — Demand and Demand-Level Sensitivity"
 author: "Study Team (Claude Code, supervised by Saber Naseralavi)"
 date: today
 ---
 
 ::: {.callout-important}
 ## Warning — Uncalibrated Model
-This is the **Phase 2 (Geometric Fidelity)** version of the report. Base
-geometry still comes from OSM (with imagery-based corrections to the deck lane
-count and merge-junction type) and demand remains entirely **hypothetical**
-(engineering guesswork, not field data). Results here are valid **only for
-testing the reproducible pipeline and geometric fidelity** — not for any
-scenario comparison or absolute-value prediction. Scenario comparison and
-sensitivity analysis follow in Phases 3-4, once evidence-based demand and
-multi-seed runs are in place.
+This is the **Phase 3** version of the report. Base geometry still comes from
+OSM (with imagery-based corrections to the deck lane count, merge-junction
+type, and pier/bay structure) and baseline demand remains entirely
+**hypothetical** (engineering guesswork, not field data). From this version
+on, per the project's Hard Rule 5, every reported number is a **mean ± 95%
+confidence interval over at least 10 seeds** — but since only the S0 (do-
+nothing) scenario exists so far, this report contains **no scenario
+comparison** (do-nothing vs. improvement options); that comes in Phase 4. What
+is here is how sensitive the existing condition (S0) itself is to demand
+level.
 :::
 
 ## 1. Purpose of this version
 
 Per the project roadmap (`CLAUDE.md`), Phase 1's goal was a **complete,
 end-to-end** pipeline — from raw OSM data to a published report — even with raw
-geometry and demand. Phase 2 (this version) brings the critical geometry (deck
-lane count, merge-junction type) and fleet composition closer to imagery
-evidence / engineering judgment on that same pipeline. This report still
-demonstrates pipeline correctness and geometric fidelity, not final engineering
-findings.
+geometry and demand. Phase 2 brought the critical geometry (deck lane count,
+merge-junction type, pier/bay structure) and fleet composition closer to
+imagery evidence / engineering judgment on that same pipeline. Phase 3 (this
+version) adds the **multi-λ × multi-seed** infrastructure required by the
+project's Hard Rule 5 and measures how sensitive the existing condition (S0)
+is to demand level — the statistical prerequisite for a meaningful scenario
+comparison in Phase 4.
 
 ## 2. Network construction and grade-separation check
 
@@ -112,20 +116,21 @@ defaults across classes (most aggressive for motorcycles).
 
 ::: {.callout-warning}
 ## Notable qualitative finding
-This single-seed run recorded **56 collisions** (with `collision.action=warn`,
-vehicles not removed) in the weaving area. This number is **not reportable as
-an actual collision rate** in any sense (single seed, hypothetical demand and
-behavior), but its qualitative direction — a high-conflict intersection absent
-channelization — matches field observation and this study's core motivation.
-Surrogate safety measures (TTC/DRAC/PET) will be reported statistically with
-multiple seeds in Phase 4.
+S0 runs with `collision.action=warn` (vehicles are not removed after a
+collision) so collisions are logged rather than truncating the simulation.
+The full collision-vs-demand trend (mean over 10 seeds per level) is in
+Section 6 ("Sensitivity to demand level"); here it suffices to say it grows
+far faster than delay does as demand rises — a qualitative signal of high
+conflict density absent channelization, consistent with this study's core
+motivation. Surrogate safety measures (TTC/DRAC/PET) will be reported
+statistically in Phase 4.
 :::
 
-## 5. Run result (single seed, S0 scenario)
+## 5. Baseline run result (λ=1.0, mean of 10 seeds)
 
 ```{python}
 #| label: tbl-kpi
-#| tbl-cap: "KPI summary by approach — scenario S0, single seed=42"
+#| tbl-cap: "KPI summary by approach — scenario S0, lambda=1.0, mean of 10 seeds"
 import pandas as pd
 df = pd.read_csv("../outputs/tables/s0_kpi_summary.csv")
 df.columns = ["Approach", "N vehicles", "Mean duration (s)",
@@ -134,25 +139,72 @@ from IPython.display import Markdown
 Markdown(df.round(2).to_markdown(index=False))
 ```
 
-![Mean time loss by approach (single seed, hypothetical demand)](../outputs/figures/s0_timeloss_by_approach.png){#fig-timeloss width=85%}
+![Mean time loss by approach (lambda=1.0, mean of 10 seeds)](../outputs/figures/s0_timeloss_by_approach.png){#fig-timeloss width=85%}
 
-All 2,600 generated vehicles entered the network and completed their trips (no
-gridlock or routing failures) — a basic health signal for network connectivity
-and routing. Time-loss values are low in this run because current hypothetical
-demand is fairly light; this number carries **no engineering meaning** until
-real demand (Phase 3) replaces it.
+Across all 50 runs (5 lambda levels x 10 seeds), every generated vehicle
+entered the network and completed its trip — a basic health signal for
+network connectivity and routing even at the highest demand level (lambda=1.4).
 
-## 6. Limitations of this version
+## 6. Sensitivity to demand level (lambda)
 
-- Ramp turning radii and pier positions still come directly from OSM / visual
-  estimation; no field measurement or precisely scaled imagery backs them yet.
-- Demand and turning ratios are entirely hypothetical (Phase 3 replaces them
-  with indirect evidence).
-- Fleet shares (especially the 30% motorcycle share) are engineering judgment,
-  not counts — per the calibration plan (`CLAUDE.md` §5) this is the top field
-  data collection priority.
-- Only one scenario (S0) and one seed were run; **no scenario comparison can be
-  drawn from this report** — per the project's Hard Rule 5. The 56-collision
-  figure above is a qualitative signal only, not a citable collision rate.
-- The Persian report now uses the Vazirmatn font with a full RTL layout
+Per the project's Hard Rule 5 and Phase 3, scenario S0 was run at 5 demand
+levels (lambda in {0.6, 0.8, 1.0, 1.2, 1.4}) x 10 independent seeds (used for
+both jtrrouter's stochastic turn assignment and sumo's own random behavior) —
+50 runs total. @fig-sensitivity shows mean time loss and collision count with
+95% confidence intervals.
+
+![S0 sensitivity to lambda — mean ± 95% CI over 10 seeds](../outputs/figures/s0_sensitivity_lambda.png){#fig-sensitivity width=95%}
+
+```{python}
+#| label: tbl-lambda
+#| tbl-cap: "Mean ± 95% CI per lambda level (10 seeds)"
+dfl = pd.read_csv("../outputs/tables/s0_lambda_summary.csv")
+dfl = dfl[dfl["metric"].isin(["mean_timeloss_s", "n_collisions"])]
+metric_en = {"mean_timeloss_s": "Mean time loss (s)", "n_collisions": "Mean collision count"}
+dfl["metric"] = dfl["metric"].map(metric_en)
+dfl = dfl[["lambda", "metric", "mean", "ci95_lo", "ci95_hi"]].round(2)
+dfl.columns = ["lambda", "Metric", "Mean", "CI95 low", "CI95 high"]
+Markdown(dfl.to_markdown(index=False))
+```
+
+**Key finding:** mean time loss rises at a fairly steady slope, from 17.8 s
+(lambda=0.6) to 27.3 s (lambda=1.4) — about a 54% increase. The recorded
+collision count, however, grows **far faster and non-linearly**: from a mean
+of 1.3 at lambda=0.6 to 101.5 at lambda=1.4 (roughly 80x). This asymmetry —
+linear delay growth versus exponential-looking safety degradation — is exactly
+what would be expected for an unchannelized weaving area with two discrete
+choke points (Section 4): as demand rises, safe merging opportunities shrink
+faster than average delay grows.
+
+::: {.callout-warning}
+## Methodology note — confidence interval on a collision count
+The `n_collisions` confidence interval uses the standard t-based method
+(suited to continuous data) and goes negative at low lambda (meaningless for a
+count) — a statistical artifact, not a claim of negative collisions. A proper
+Phase-4 estimate needs a count model (Poisson / negative binomial). Still, the
+**mean trend** (exponential-looking growth with lambda) is clearly visible and
+significant across the 50-run dataset.
+:::
+
+## 7. Limitations of this version
+
+- Ramp turning radii still come directly from OSM / visual estimation; no
+  field measurement or precisely scaled imagery backs them yet (bridge bay
+  widths are likewise schematic — see Section 4).
+- Baseline demand (volume per approach) and turning ratios are entirely
+  hypothetical; what this phase calls "sensitivity" is scaling that same
+  hypothetical demand, not replacing it with field evidence — still pending
+  (`CLAUDE.md` §5).
+- Fleet shares (especially the 30% motorcycle share), left-turn share, and the
+  behavioral aggressiveness multiplier (tau) are registered in
+  `assumptions.yml` as future global-sensitivity factors but have not been
+  tested yet; "turning radius" as a sensitivity factor requires rebuilding
+  network geometry and was deferred to Phase 4 (alongside building scenarios
+  S1-S5).
+- Only one scenario (S0) has been built; **no scenario comparison can be drawn
+  from this report** — per the project's Hard Rule 5. What was reported is
+  S0's *within-scenario* sensitivity to demand, not a ranking of options.
+- The collision-count confidence interval uses a method suited to continuous
+  data (see the warning above); to be corrected in Phase 4.
+- The Persian report uses the Vazirmatn font with a full RTL layout
   (xepersian); final visual polish still happens in Phase 5.
