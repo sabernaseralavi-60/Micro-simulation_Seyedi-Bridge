@@ -1,0 +1,86 @@
+# فاز ۴ — تعریف اعلانی سناریوها (CLAUDE.md §۶: «config/scenarios.yml تعریف
+# اعلانی سناریوها»). src/04_run_experiments.py و src/05_extract_kpis.py این
+# فایل را می‌خوانند تا بدانند کدام سناریو/نسخهٔ کنترلی را با چند-λ×چند-seed
+# اجرا/تحلیل کنند. status: built یعنی شبکه/سناریو ساخته و آمادهٔ اجراست؛
+# status: planned یعنی فقط طراحی مفهومی ثبت شده (README سناریو) و هنوز ساخته
+# نشده — رجوع به فاز ۴ بندهای بعدی CLAUDE.md.
+
+scenarios:
+  S0_baseline:
+    label_fa: "حفظ وضع موجود (Do-Nothing)"
+    label_en: "Do-Nothing baseline"
+    status: built
+    is_reference: true
+    net_file_shared: "network/seyedi.net.xml"
+    control_variants:
+      default:
+        label_fa: "بدون کنترل (priority/right_before_left + zipper در نقاط ادغام)"
+        net_file: "network/seyedi.net.xml"
+        out_dir: "scenarios/S0_baseline/out"
+        table_prefix: "s0"
+
+  S1_signal:
+    label_fa: "تبدیل به تقاطع چراغ‌دار"
+    label_en: "Signalized intersection"
+    status: built
+    design_note: >
+      زیر پل به یک تقاطع واحد تبدیل نمی‌شود (رجوع به assumptions.yml ->
+      signal_design_S1 برای توجیه کامل) — هر گرهٔ ادغام واقعی (in-degree>=۲)
+      درون میدانچهٔ ویوینگ به‌طور مستقل چراغ‌دار می‌شود؛ طول سیکل مشترک با
+      روش وبستر (src/08_webster_timing.py) برای تقاضای طراحی λ=۱.۰ محاسبه و
+      در نسخهٔ «ثابت» بدون تغییر روی همهٔ λها اعمال می‌شود؛ نسخهٔ «actuated»
+      خودکار با تقاضا تطبیق می‌یابد. بررسی کفایت فضای زیر پل برای صف و خطر
+      سرریز صف به رمپ‌ها (بند صریح CLAUDE.md) در src/06_statistics.py با
+      شاخص طول صف/۹۵ام‌صدک ارزیابی می‌شود.
+    control_variants:
+      fixed:
+        label_fa: "زمان‌ثابت (وبستر @ λ=۱.۰)"
+        net_file: "scenarios/S1_signal/network/seyedi_S1_fixed.net.xml"
+        out_dir: "scenarios/S1_signal/out/fixed"
+        table_prefix: "s1_fixed"
+      actuated:
+        label_fa: "actuated (پیش‌فرض SUMO gap-out)"
+        net_file: "scenarios/S1_signal/network/seyedi_S1_actuated.net.xml"
+        out_dir: "scenarios/S1_signal/out/actuated"
+        table_prefix: "s1_actuated"
+
+  S2_rcut:
+    label_fa: "محدودسازی گردش‌ها + دوربرگردان (RCUT/Median U-Turn)"
+    label_en: "Restricted Crossing U-Turn / Median U-Turn"
+    status: planned
+    design_note: >
+      گردش چپ زیر پل حذف می‌شود؛ خودروها مستقیم/راست می‌روند و در دوربرگردانی
+      دور از مرکز پل (قید صریح کاربر: سرعت بالای عرشه) U-turn می‌زنند. فاصلهٔ
+      دوربرگردان از مرکز به‌عنوان متغیر حساسیت با سه سطح ۱۵۰/۲۵۰/۳۵۰ متر آزموده
+      می‌شود (رجوع به README این سناریو برای محاسبهٔ طول تشخیص+واکنش+کاهش‌سرعت+بافت).
+
+  S3_roundabout:
+    label_fa: "میدان مدرن/توربو"
+    label_en: "Modern/turbo roundabout"
+    status: planned
+    design_note: >
+      امکان‌سنجی مستقیماً محدود به سازهٔ ۷دهانه‌ای پل است (رجوع به
+      assumptions.yml -> bridge_geometry.span_structure) — گردش پیوستهٔ میدان
+      نیازمند بازکردن دهانهٔ مرکزی (مشروط به تأیید مهندس سازه، خارج از حیطهٔ
+      این مطالعه) یا طراحی میدان نامتقارن محدود به دو دهانهٔ باز موجود است؛
+      هر دو گزینه در README این سناریو با هزینه/فایده مقایسه می‌شوند.
+
+  S4_channelization:
+    label_fa: "کانالیزاسیون + گردش راست آزاد"
+    label_en: "Channelization + free right-turn"
+    status: planned
+    design_note: >
+      جزیره‌سازی و خط گردش راست جداشده در هر دو دهانهٔ باز؛ حذف پارک حاشیه‌ای
+      در ۵۰ متر منتهی به تقاطع. کمترین تغییر توپولوژیک از میان سناریوها —
+      قابل‌پیاده‌سازی با پچ plain-XML مشابه فاز ۲ (بدون نیاز به گره‌های جدید).
+
+  S5_hybrid:
+    label_fa: "ترکیبی/خلاقانه (حداقل دو گزینهٔ ابتکاری)"
+    label_en: "Hybrid / creative (at least two original options)"
+    status: planned
+    design_note: >
+      حداقل دو ایدهٔ ابتکاری با توجیه مهندسی، ثبت‌شده در README این سناریو —
+      نامزدها: (الف) میدان کوچک + چراغ متردهنده روی پای غالب، (ب) حلقهٔ
+      یک‌طرفهٔ زیرپل با اولویت به عبور مستقیم بلوار سیدی، (ج) بازکردن دهانهٔ
+      مرکزی به‌عنوان مسیر سوم فقط برای گردش‌های سبک (موتورسیکلت/سواری) در
+      صورت تأیید سازه‌ای مشروط.

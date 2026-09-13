@@ -3,8 +3,9 @@
 # با `make all` از صفر بازتولید شود.
 #
 # فاز ۱-۳ کامل شد: network -> patch-geometry -> demand -> run -> analyze -> figures -> report
-# (هر سه فرمت، هر دو زبان). `run` اکنون سناریوی S0 را در ۵ سطح تقاضا (λ) × ۱۰ seed
-# (طبق قاعدهٔ سخت ۵) اجرا می‌کند — حدود ۱۰ دقیقه. سناریوهای S1-S5 در فاز ۴ اضافه می‌شوند.
+# (هر سه فرمت، هر دو زبان). فاز ۴ (سناریوسازی) در حال ساخت: S1 (چراغ‌دار) آماده
+# است؛ `run`/`analyze`/`statistics` اکنون همهٔ سناریوهای status=built در
+# config/scenarios.yml را پوشش می‌دهند (نه فقط S0). S2-S5 هنوز planned هستند.
 
 PYTHON := .venv/Scripts/python.exe
 SUMO_HOME_DIR := $(CURDIR)/.venv/Lib/site-packages/sumo
@@ -12,9 +13,9 @@ export SUMO_HOME := $(SUMO_HOME_DIR)
 export PYTHONIOENCODING := utf-8
 export QUARTO_PYTHON := $(CURDIR)/$(PYTHON)
 
-.PHONY: all check-env sketch network patch-geometry demand run analyze figures report publish clean
+.PHONY: all check-env sketch network patch-geometry demand webster-timing scenario-s1 run analyze statistics figures report publish clean
 
-all: check-env sketch network patch-geometry demand run analyze figures report
+all: check-env sketch network patch-geometry demand webster-timing scenario-s1 run analyze statistics figures report
 
 ## بررسی نصب‌بودن ابزارهای لازم (فاز ۰، گام ۱)
 check-env:
@@ -45,13 +46,25 @@ patch-geometry:
 demand:
 	$(PYTHON) src/03_build_demand.py
 
-## فاز ۳: اجرای سناریوی S0 در ۵ سطح λ × ۱۰ seed (۵۰ اجرا، ~۱۰ دقیقه)
+## فاز ۴: محاسبهٔ سیکل بهینهٔ چراغ S1 با روش وبستر (@ λ=۱.۰) -> config/signal_timing_S1.yml
+webster-timing:
+	$(PYTHON) src/08_webster_timing.py
+
+## فاز ۴: ساخت شبکهٔ S1 (چراغ‌دار) - نسخهٔ fixed + actuated
+scenario-s1: webster-timing
+	$(PYTHON) scenarios/S1_signal/build_network.py
+
+## فاز ۳-۴: اجرای همهٔ سناریوهای built (S0 + S1×۲) در ۵ سطح λ × ۱۰ seed
 run:
 	$(PYTHON) src/04_run_experiments.py
 
-## فاز ۳: استخراج KPI چند-λ/چند-seed + میانگین±CI۹۵٪ به outputs/tables/*.{csv,parquet}
+## فاز ۳-۴: استخراج KPI چند-سناریو/چند-λ/چند-seed + میانگین±CI۹۵٪ به outputs/tables/*.{csv,parquet}
 analyze:
 	$(PYTHON) src/05_extract_kpis.py
+
+## فاز ۴: مقایسهٔ زوجی سناریوها روی seedهای مشترک (آزمون معنی‌داری + اندازهٔ اثر)
+statistics:
+	$(PYTHON) src/06_statistics.py
 
 ## فاز ۳: نمودار KPI به تفکیک پا + نمودار حساسیت به λ
 figures:

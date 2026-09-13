@@ -1,0 +1,22 @@
+method: webster
+design_lambda: 1.0
+inputs:
+  saturation_flow_per_lane: 1650
+  lost_time_per_phase: 4.0
+  underpass_lanes: 2
+  ramp_lanes: 1
+  q_phase_A_veh_per_hour: 1000.0
+  q_phase_B_veh_per_hour: 480.0
+critical_flow_ratios:
+  y_A: 0.303
+  y_B: 0.2909
+  Y: 0.5939
+saturated_at_design_demand: false
+cycle_length_s:
+  webster_optimum_raw: 41.9
+  clamped_to_engineering_bounds: false
+  final_used_s: 41.9
+green_split_s:
+  phase_A_ns_through: 17.3
+  phase_B_bridge_turns: 16.6
+total_lost_time_s: 8.0
