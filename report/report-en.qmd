@@ -192,21 +192,27 @@ visible), revealed a determining physical fact not obvious from today's
 maps at first glance:
 
 > Under the bridge, along the east-west axis, the space is divided into
-> **7 bays** (3 west + 1 center + 3 east). Of the three bays on each side,
-> **only the end bay (the one farthest from center) is closed** — part of
-> the bridge's structural body, not usable open space; the other two bays
-> on each side, **including the one adjacent to center**, are open to
-> traffic. The center bay is also currently kept deliberately closed.
+> **7 bays** (3 west + 1 center + 3 east). The **three middle bays** (the
+> center bay plus one adjacent bay on each side) are closed together and
+> form a single **raised island shaped like an oval roundabout** — per an
+> explicit "Closed but Can be opened" label in the user's photo evidence,
+> each of these three bays can be opened independently in a scenario. Only
+> the **two end bays**, farthest from center on each side, are open; in the
+> existing condition they function as **U-turns**.
 
 This finding corrected the Phase-0 first impression ("one continuous open
-plaza"): what actually exists under the bridge is **two comparatively wide
-open zones** (about two bays each, west and east) with a closed structural
-bay between them — not one continuous open space, and (per the user's
-direct correction this session, backed by fresh imagery evidence) **not
-two narrow single-bay choke points** either, as earlier versions of this
-report incorrectly claimed. This physical fact places a ceiling on any
-future geometric design in this study (including the feasibility of a
-modern roundabout in S3), and is recorded in `config/assumptions.yml`
+plaza") — and that correction was itself corrected once more by the user
+after a closer re-examination of the same evidence (an intermediate
+version, "only the end bay on each side is closed," was itself wrong). The
+final picture: what actually exists under the bridge is a **closed
+three-bay island at the center** separating two **two-bay U-turns** at the
+two ends — not one continuous open space, and not two narrow single-bay
+choke points either, as earlier versions of this report incorrectly
+claimed. This physical fact places a ceiling on any future geometric
+design in this study, and gives **S3 a concrete opportunity**: the closed
+three-bay island already has the geometry of a roundabout's central
+island and could ground a more precise S3 design (in place of the current
+version's estimated ring). Fully recorded in `config/assumptions.yml`
 under `bridge_geometry.span_structure`. **Note:** this correction is purely
 descriptive — a direct code check confirmed none of the S1-S5 network-build
 scripts use this figure for actual topological decisions; all of them work
@@ -219,8 +225,8 @@ Classical capacity analysis (HCM) was built for standard four-leg
 intersections / roundabouts, and its assumptions (orderly queuing,
 discrete, classifiable movements) are exactly what is violated at this
 site: informal weaving behavior, a high motorcycle share with inter-lane
-filtering, and two comparatively wide open zones separated by an
-unconventional closed structural bay. A microsimulation that models each vehicle
+filtering, and an unconventional closed three-bay island separating two
+two-bay U-turns at the two ends. A microsimulation that models each vehicle
 individually (not just aggregate flow) is the only method that can capture
 this complexity. SUMO (Simulation of Urban MObility) was chosen because it
 is open-source and scriptable, so the entire pipeline (network, demand,
@@ -453,8 +459,9 @@ existing topology. Ring connections get a high numeric priority and
 
 - **`constrained`:** the ring alone, limited to the two existing open bays.
 - **`full`:** the same ring plus a direct east-west chord, standing in for
-  the (structurally conditional) opened center bay — subject to a
-  structural engineer's sign-off, outside this traffic study's scope.
+  the closed three-bay center island (with at least one of its three bays
+  opened) — subject to a structural engineer's sign-off, outside this
+  traffic study's scope.
 
 Both variants completed validation runs (all vehicles finished); the
 `constrained` variant showed a small (0.1%) "wrong-lane" teleport rate,
