@@ -1,19 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2026-09-14T11:33:35.838003+03:30 by Eclipse SUMO netconvert 1.27.1
+<!-- generated on 2026-09-14T11:33:36.167655+03:30 by Eclipse SUMO netconvert 1.27.1
 <netconvertConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <input>
-        <node-files value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\scenarios\S3_roundabout\plain\seyedi_s3_constrained.nod.xml"/>
-        <edge-files value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\scenarios\S3_roundabout\plain\seyedi_s3_constrained.edg.xml"/>
-        <connection-files value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\scenarios\S3_roundabout\plain\seyedi_s3_constrained.con.xml"/>
-        <tllogic-files value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\scenarios\S3_roundabout\plain\seyedi_s3_constrained.tll.xml"/>
+        <node-files value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\scenarios\S5_hybrid\plain\seyedi_s5_metering.nod.xml"/>
+        <edge-files value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\scenarios\S5_hybrid\plain\seyedi_s5_metering.edg.xml"/>
+        <connection-files value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\scenarios\S5_hybrid\plain\seyedi_s5_metering.con.xml"/>
+        <tllogic-files value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\scenarios\S5_hybrid\plain\seyedi_s5_metering.tll.xml"/>
         <type-files value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\config\typemap\urban_ir.typ.xml"/>
     </input>
 
     <output>
-        <output-file value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\scenarios\S3_roundabout\network\seyedi_S3_constrained.net.xml"/>
+        <output-file value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\scenarios\S5_hybrid\network\seyedi_S5_metering.net.xml"/>
     </output>
+
+    <tls_building>
+        <tls.cycle.time value="20"/>
+        <tls.default-type value="static"/>
+    </tls_building>
 
     <junctions>
         <no-turnarounds value="true"/>
@@ -519,6 +524,13 @@
         <lane id="s3_ring_W_S_0" index="0" speed="6.94" length="130.86" shape="3137.95,2757.03 3139.64,2733.89 3158.54,2707.23 3187.10,2694.83 3216.42,2698.84 3227.49,2707.80"/>
     </edge>
 
+    <tlLogic id="6711509163" type="static" programID="0" offset="0">
+        <phase duration="5"  state="GGGrrrr"/>
+        <phase duration="5"  state="yyyrrrr"/>
+        <phase duration="5"  state="rrrGGGG"/>
+        <phase duration="5"  state="rrryyyy"/>
+    </tlLogic>
+
     <junction id="10796684374" type="zipper" x="3266.45" y="2733.00" incLanes="1160824732_0 1165329135#2_0" intLanes=":10796684374_0_0 :10796684374_1_0 :10796684374_1_1" shape="3267.38,2737.72 3265.04,2728.40 3263.90,2728.53 3263.35,2728.48 3262.81,2728.33 3262.29,2728.11 3261.79,2727.81 3259.96,2730.43 3261.26,2731.52 3261.54,2731.95 3261.57,2732.29 3261.35,2732.56 3260.89,2732.75 3261.66,2735.85 3263.79,2736.17 3265.25,2737.39 3266.14,2737.78">
         <request index="0" response="000" foes="000" cont="0"/>
         <request index="1" response="000" foes="000" cont="0"/>
@@ -659,7 +671,7 @@
         <request index="0" response="00" foes="00" cont="0"/>
         <request index="1" response="00" foes="00" cont="0"/>
     </junction>
-    <junction id="6711509163" type="priority" x="3138.78" y="2767.70" incLanes="s3_ring_N_W_0 627154371#0-AddedOffRampEdge_0 627154371#0-AddedOffRampEdge_1 627154371#0-AddedOffRampEdge_2" intLanes=":6711509163_0_0 :6711509163_1_0 :6711509163_2_0 :6711509163_3_0 :6711509163_4_0 :6711509163_4_1 :6711509163_6_0" shape="3136.23,2772.98 3139.40,2772.57 3139.53,2770.72 3139.90,2770.04 3140.47,2769.54 3141.25,2769.20 3142.23,2769.02 3142.08,2759.83 3140.59,2759.55 3140.08,2759.18 3139.74,2758.66 3139.56,2757.98 3139.55,2757.15 3136.36,2756.92 3135.59,2758.91 3134.76,2759.78 3133.62,2760.56 3132.18,2761.27 3130.44,2761.90 3133.27,2771.07 3134.76,2770.92 3135.32,2771.14 3135.75,2771.56 3136.05,2772.17">
+    <junction id="6711509163" type="traffic_light" x="3138.78" y="2767.70" incLanes="s3_ring_N_W_0 627154371#0-AddedOffRampEdge_0 627154371#0-AddedOffRampEdge_1 627154371#0-AddedOffRampEdge_2" intLanes=":6711509163_0_0 :6711509163_1_0 :6711509163_2_0 :6711509163_3_0 :6711509163_4_0 :6711509163_4_1 :6711509163_6_0" shape="3136.23,2772.98 3139.40,2772.57 3139.53,2770.72 3139.90,2770.04 3140.47,2769.54 3141.25,2769.20 3142.23,2769.02 3142.08,2759.83 3140.59,2759.55 3140.08,2759.18 3139.74,2758.66 3139.56,2757.98 3139.55,2757.15 3136.36,2756.92 3135.59,2758.91 3134.76,2759.78 3133.62,2760.56 3132.18,2761.27 3130.44,2761.90 3133.27,2771.07 3134.76,2770.92 3135.32,2771.14 3135.75,2771.56 3136.05,2772.17">
         <request index="0" response="0000000" foes="1111000" cont="0"/>
         <request index="1" response="0000000" foes="1110000" cont="0"/>
         <request index="2" response="0000000" foes="1000000" cont="0"/>
@@ -753,10 +765,10 @@
     <connection from="627154371#0" to="627154371#0-AddedOffRampEdge" fromLane="0" toLane="0" via=":627154371#0-AddedOffRampNode_0_0" dir="s" state="M"/>
     <connection from="627154371#0" to="627154371#0-AddedOffRampEdge" fromLane="0" toLane="1" via=":627154371#0-AddedOffRampNode_0_1" dir="s" state="M"/>
     <connection from="627154371#0" to="627154371#0-AddedOffRampEdge" fromLane="0" toLane="2" via=":627154371#0-AddedOffRampNode_0_2" dir="s" state="M"/>
-    <connection from="627154371#0-AddedOffRampEdge" to="s3_ring_W_S" fromLane="0" toLane="0" via=":6711509163_3_0" dir="r" state="m"/>
-    <connection from="627154371#0-AddedOffRampEdge" to="627154371#8" fromLane="0" toLane="0" via=":6711509163_4_0" dir="s" state="m"/>
-    <connection from="627154371#0-AddedOffRampEdge" to="627154371#8" fromLane="1" toLane="1" via=":6711509163_4_1" dir="s" state="m"/>
-    <connection from="627154371#0-AddedOffRampEdge" to="627633586" fromLane="2" toLane="0" via=":6711509163_6_0" dir="s" state="m"/>
+    <connection from="627154371#0-AddedOffRampEdge" to="s3_ring_W_S" fromLane="0" toLane="0" via=":6711509163_3_0" tl="6711509163" linkIndex="3" dir="r" state="o"/>
+    <connection from="627154371#0-AddedOffRampEdge" to="627154371#8" fromLane="0" toLane="0" via=":6711509163_4_0" tl="6711509163" linkIndex="4" dir="s" state="o"/>
+    <connection from="627154371#0-AddedOffRampEdge" to="627154371#8" fromLane="1" toLane="1" via=":6711509163_4_1" tl="6711509163" linkIndex="5" dir="s" state="o"/>
+    <connection from="627154371#0-AddedOffRampEdge" to="627633586" fromLane="2" toLane="0" via=":6711509163_6_0" tl="6711509163" linkIndex="6" dir="s" state="o"/>
     <connection from="627154371#10" to="122236756#0" fromLane="0" toLane="0" via=":6053976958_0_0" dir="s" state="M"/>
     <connection from="627154371#10" to="1165329135#1" fromLane="1" toLane="0" via=":6053976958_1_0" dir="s" state="M"/>
     <connection from="627154371#8" to="627154377" fromLane="0" toLane="0" via=":6711509157_0_0" dir="s" state="M"/>
@@ -814,9 +826,9 @@
     <connection from="s3_ring_E_N" to="s3_ring_N_W" fromLane="0" toLane="0" pass="1" via=":5091632826_5_0" dir="s" state="M"/>
     <connection from="s3_ring_E_N" to="627154373" fromLane="0" toLane="0" via=":5091632826_6_0" dir="l" state="M"/>
     <connection from="s3_ring_E_N" to="627167743#0" fromLane="0" toLane="0" via=":5091632826_7_0" dir="l" state="M"/>
-    <connection from="s3_ring_N_W" to="s3_ring_W_S" fromLane="0" toLane="0" pass="1" via=":6711509163_0_0" dir="s" state="M"/>
-    <connection from="s3_ring_N_W" to="627154371#8" fromLane="0" toLane="0" via=":6711509163_1_0" dir="l" state="M"/>
-    <connection from="s3_ring_N_W" to="627633586" fromLane="0" toLane="0" via=":6711509163_2_0" dir="l" state="M"/>
+    <connection from="s3_ring_N_W" to="s3_ring_W_S" fromLane="0" toLane="0" pass="1" via=":6711509163_0_0" tl="6711509163" linkIndex="0" dir="s" state="O"/>
+    <connection from="s3_ring_N_W" to="627154371#8" fromLane="0" toLane="0" via=":6711509163_1_0" tl="6711509163" linkIndex="1" dir="l" state="O"/>
+    <connection from="s3_ring_N_W" to="627633586" fromLane="0" toLane="0" via=":6711509163_2_0" tl="6711509163" linkIndex="2" dir="l" state="O"/>
     <connection from="s3_ring_S_E" to="627154378#1-AddedOnRampEdge" fromLane="0" toLane="0" via=":6711509166_0_0" dir="s" state="M"/>
     <connection from="s3_ring_S_E" to="s3_ring_E_N" fromLane="0" toLane="0" pass="1" via=":6711509166_1_0" dir="l" state="M"/>
     <connection from="s3_ring_W_S" to="s3_ring_S_E" fromLane="0" toLane="0" pass="1" via=":6711509176_3_0" dir="r" state="M"/>

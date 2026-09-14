@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  سناریوی S5 (metering) — میدان S3-constrained + چراغ متردهنده روی پای غرب.
+  رجوع به scenarios/S5_hybrid/README.md و config/scenarios.yml -> S5_hybrid.
+  مدل کالیبره‌نشده — نتایج صرفاً برای مقایسهٔ نسبی سناریوها معتبرند.
+  توجه: اجرای چند-λ×چند-seed واقعی از src/04_run_experiments.py طبق
+  config/scenarios.yml انجام می‌شود؛ این فایل صرفاً برای بازرسی چشمی تکی است.
+-->
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+    <input>
+        <net-file value="network/seyedi_S5_metering.net.xml"/>
+        <route-files value="../../demand/routes.rou.xml"/>
+    </input>
+    <time>
+        <begin value="0"/>
+        <end value="4500"/>
+    </time>
+    <processing>
+        <ignore-route-errors value="true"/>
+        <collision.action value="warn"/>
+    </processing>
+    <report>
+        <no-warnings value="true"/>
+        <duration-log.statistics value="true"/>
+    </report>
+</configuration>

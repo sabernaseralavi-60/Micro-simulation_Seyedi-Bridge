@@ -13,9 +13,9 @@ export SUMO_HOME := $(SUMO_HOME_DIR)
 export PYTHONIOENCODING := utf-8
 export QUARTO_PYTHON := $(CURDIR)/$(PYTHON)
 
-.PHONY: all check-env sketch network patch-geometry demand webster-timing scenario-s1 scenario-s2 scenario-s3 scenario-s4 run analyze statistics behavior-diagnostic figures report publish clean
+.PHONY: all check-env sketch network patch-geometry demand webster-timing scenario-s1 scenario-s2 scenario-s3 scenario-s4 scenario-s5 run analyze statistics behavior-diagnostic figures report publish clean
 
-all: check-env sketch network patch-geometry demand webster-timing scenario-s1 scenario-s2 scenario-s3 scenario-s4 run analyze statistics figures report
+all: check-env sketch network patch-geometry demand webster-timing scenario-s1 scenario-s2 scenario-s3 scenario-s4 scenario-s5 run analyze statistics figures report
 
 ## بررسی نصب‌بودن ابزارهای لازم (فاز ۰، گام ۱)
 check-env:
@@ -65,6 +65,10 @@ scenario-s4:
 ## فاز ۴: ساخت شبکهٔ S3 (میدان نامتقارن — هر دو گزینهٔ constrained/full)
 scenario-s3:
 	$(PYTHON) scenarios/S3_roundabout/build_network.py
+
+## فاز ۴: ساخت شبکهٔ S5 (ترکیبی — metering/oneway_priority، مبتنی بر حلقهٔ S3)
+scenario-s5: scenario-s3
+	$(PYTHON) scenarios/S5_hybrid/build_network.py
 
 ## فاز ۳-۴: اجرای همهٔ سناریوهای built (S0 + S1×۲) در ۵ سطح λ × ۱۰ seed
 run:

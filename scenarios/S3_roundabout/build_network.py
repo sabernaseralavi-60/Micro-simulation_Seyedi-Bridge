@@ -68,6 +68,10 @@ TAP_OUT = {
     "E": ["627154378#1-AddedOnRampEdge"],
 }
 RING_SPEED = "6.94"  # 25 km/h — سرعت متعارف مانور داخل میدان کوچک
+RING_LANES = "1"  # آزموده شد: ۲ خط برخورد را در چند اجرا افزایش داد (تراکم بیشتر
+# در گرهٔ کوچک)، نه کاهش؛ به ۱ خط بازگردانده شد — رجوع به بحث گزارش (بخش ۷)
+WEAVE_CENTER = (3200, 2750)
+ARC_WAYPOINTS = 4  # تعداد نقاط میانی داخل هر یال حلقه، برای شکل کمانی (نه خط راست)
 
 
 def fix_console_encoding() -> None:
@@ -83,6 +87,33 @@ def node_coord(nod_root, nid):
         if n.get("id") == nid:
             return float(n.get("x")), float(n.get("y"))
     raise KeyError(nid)
+
+
+def arc_shape(p_from, p_to, center=WEAVE_CENTER, n_waypoints=ARC_WAYPOINTS):
+    """نقاط میانی یک کمان پادساعتگرد از p_from به p_to حول center — با
+    درون‌یابی خطی زاویه (همیشه رو به افزایش، برای تضمین جهت پادساعتگرد) و
+    شعاع (چون ۴ گرهٔ واقعی هم‌فاصله از مرکز نیستند). نسخهٔ ۲ S3: جایگزین
+    خط راست نسخهٔ اول — طول کمان بیشتر یعنی فضای بیشتر برای ادغام/شتاب‌گیری
+    و شعاع انحراف واقعی‌تر (هستهٔ رفتاری یک میدان واقعی)."""
+    cx, cy = center
+    a0 = math.atan2(p_from[1] - cy, p_from[0] - cx)
+    a1 = math.atan2(p_to[1] - cy, p_to[0] - cx)
+    if a1 <= a0:
+        a1 += 2 * math.pi
+    r0 = math.hypot(p_from[0] - cx, p_from[1] - cy)
+    r1 = math.hypot(p_to[0] - cx, p_to[1] - cy)
+    pts = [p_from]
+    for i in range(1, n_waypoints + 1):
+        t = i / (n_waypoints + 1)
+        a = a0 + t * (a1 - a0)
+        r = r0 + t * (r1 - r0)
+        pts.append((cx + r * math.cos(a), cy + r * math.sin(a)))
+    pts.append(p_to)
+    return pts
+
+
+def fmt_shape(shape) -> str:
+    return " ".join(f"{x:.2f},{y:.2f}" for x, y in shape)
 
 
 def build_variant(variant: str) -> pathlib.Path:
@@ -113,7 +144,7 @@ def build_variant(variant: str) -> pathlib.Path:
         el.set("id", eid)
         el.set("from", frm)
         el.set("to", to)
-        el.set("numLanes", "1")
+        el.set("numLanes", RING_LANES)
         el.set("speed", RING_SPEED)
         # اولویت یال بالا (طبق رفتار واقعی میدان: ترافیک گردشی حق‌تقدم دارد،
         # ورودی‌ها منتظر می‌مانند) — pass="true" به‌تنهایی کافی نبود، چون فقط
@@ -121,7 +152,22 @@ def build_variant(variant: str) -> pathlib.Path:
         # priority عددی مستقیماً الگوریتم پیش‌فرض netconvert برای تعیین
         # M(اصلی)/m(فرعی) در گره‌های type=priority را هدایت می‌کند.
         el.set("priority", "50")
-        ring_edge_ids.append((eid, frm, to))
+        el.set("shape", fmt_shape(arc_shape(coords[frm_key], coords[to_key])))
+        ring_edge_ids.append((eid, frm, to, int(RING_LANES)))
+        return el
+
+    def add_chord_edge(eid, frm_key, to_key):
+        """وتر مستقیم (نه کمانی حول مرکز — یک شکافِ زاویه‌ای بیش از نیمی از
+        دایره بین W و E است؛ کمانی‌کردن آن عملاً معادل دوبارهٔ مسیر جنوبی
+        حلقه می‌شد، نه یک میان‌بر مستقیم). خط راست بین دو گره، دقیقاً بازنماییِ
+        مفهومیِ «مسیر سوم مستقیم از دهانهٔ مرکزی» است. عمداً ۱خطه (نه ۲خطه
+        مثل حلقه) نگه داشته شد — بازرسی تجربی نشان داد ۲خطه‌کردن وتر، برخورد
+        را در گره‌های W/E به‌شدت افزایش می‌داد (بار هم‌زمان بیشتر روی گرهٔ
+        از قبل شلوغ)."""
+        el = add_ring_edge(eid, frm_key, to_key)
+        el.set("shape", fmt_shape([coords[frm_key], coords[to_key]]))
+        el.set("numLanes", "1")
+        ring_edge_ids[-1] = (eid, RING_NODES[frm_key], RING_NODES[to_key], 1)
         return el
 
     for i in range(len(RING_ORDER)):
@@ -130,37 +176,58 @@ def build_variant(variant: str) -> pathlib.Path:
 
     if variant == "full":
         # وتر شرق-غرب مستقیم، مشروط به بازشدن دهانهٔ مرکزی (رجوع به docstring)
-        add_ring_edge("s3_chord_W_E", "W", "E")
-        add_ring_edge("s3_chord_E_W", "E", "W")
+        add_chord_edge("s3_chord_W_E", "W", "E")
+        add_chord_edge("s3_chord_E_W", "E", "W")
 
     edg_tree.write(edg_path, encoding="UTF-8", xml_declaration=True)
 
     # اتصالات حلقه: هر یال حلقه pass="true" می‌گیرد (حق‌تقدم گردشی بدون قیدوشرط)
+    # نکته (رفع باگ نسخهٔ ۲.۰): وقتی یال حلقه به RING_LANES=2 ارتقا یافت، اگر
+    # فقط fromLane=0/toLane=0 وصل شود، خط دوم (index 1) هیچ اتصال خروجی‌ای
+    # نمی‌گیرد — netconvert هشدار «Lane not connected» می‌دهد و خودروهایی که
+    # روی آن خط قرار می‌گیرند، درست قبل از تقاطع مجبور به تغییر خط اضطراری
+    # می‌شوند (دقیقاً همان teleportهای «خط اشتباه» که در بازرسی اولیه دیده
+    # شد). راه‌حل: هر دو خط (۰ و ۱) صریحاً به‌صورت موازی وصل می‌شوند — سومو
+    # صفت‌های دیگر (مثل pass) را روی یک <connection> بدون fromLane/toLane
+    # صریح نمی‌پذیرد.
     con_tree = ET.parse(con_path)
     con_root = con_tree.getroot()
-    for eid, frm, to in ring_edge_ids:
-        for next_eid, _, next_to in [(e2, f2, t2) for e2, f2, t2 in ring_edge_ids if f2 == to]:
-            c = ET.SubElement(con_root, "connection")
-            c.set("from", eid)
-            c.set("to", next_eid)
-            c.set("fromLane", "0")
-            c.set("toLane", "0")
-            c.set("pass", "true")
+    for eid, frm, to, lanes in ring_edge_ids:
+        for next_eid, _, next_to, next_lanes in [t for t in ring_edge_ids if t[1] == to]:
+            for lane in range(min(lanes, next_lanes)):
+                c = ET.SubElement(con_root, "connection")
+                c.set("from", eid)
+                c.set("to", next_eid)
+                c.set("fromLane", str(lane))
+                c.set("toLane", str(lane))
+                c.set("pass", "true")
 
     # اتصال ورود: یال‌های ورودی موجود -> اولین یال حلقهٔ آغازشونده از همان گره
     # اتصال خروج: یال حلقهٔ رسیده به گره -> یال‌های خروجی موجود
     # (بدون این، netconvert چون فایل اتصالات صریح است، این مسیرهای تازه را
     # خودکار حدس نمی‌زند و jtrrouter با خطای «not connected» متوقف می‌شود.)
+    #
+    # نکتهٔ دوم (رفع باگ): اگر یال ورودی/خروجی از قبل اتصالات صریحِ
+    # لِین‌دار داشته باشد (اکثر یال‌های این تقاطع دارند)، netconvert یک
+    # اتصال تازهٔ بدون fromLane/toLane را بی‌صدا نادیده می‌گیرد (نه خطا، نه
+    # هشدار) — دقیقاً همان چیزی که این‌جا رخ داد. راه‌حل: fromLane/toLane
+    # صریح، با گرد کردن به کوچک‌ترین تعداد خط طرفین.
+    def n_lanes_of(edge_id: str) -> int:
+        el = edg_root.find(f"./edge[@id='{edge_id}']")
+        return int(el.get("numLanes", "1")) if el is not None else 1
+
     def add_manual_connection(frm, to):
-        c = ET.SubElement(con_root, "connection")
-        c.set("from", frm)
-        c.set("to", to)
-        c.set("fromLane", "0")
-        c.set("toLane", "0")
+        n = min(n_lanes_of(frm), n_lanes_of(to))
+        for lane in range(n):
+            c = ET.SubElement(con_root, "connection")
+            c.set("from", frm)
+            c.set("to", to)
+            c.set("fromLane", str(lane))
+            c.set("toLane", str(lane))
 
     for key, node_id in RING_NODES.items():
-        ring_starts_here = [eid for eid, frm, to in ring_edge_ids if frm == node_id]
-        ring_ends_here = [eid for eid, frm, to in ring_edge_ids if to == node_id]
+        ring_starts_here = [eid for eid, frm, to, lanes in ring_edge_ids if frm == node_id]
+        ring_ends_here = [eid for eid, frm, to, lanes in ring_edge_ids if to == node_id]
         for in_edge in TAP_IN[key]:
             for ring_eid in ring_starts_here:
                 add_manual_connection(in_edge, ring_eid)
