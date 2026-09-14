@@ -193,18 +193,25 @@ maps at first glance:
 
 > Under the bridge, along the east-west axis, the space is divided into
 > **7 bays** (3 west + 1 center + 3 east). Of the three bays on each side,
-> only the one **adjacent to the center** is open to traffic; the two outer
-> bays on each side are completely closed and are part of the bridge's
-> structural body — not usable open space. The center bay is also
-> currently kept deliberately closed.
+> **only the end bay (the one farthest from center) is closed** — part of
+> the bridge's structural body, not usable open space; the other two bays
+> on each side, **including the one adjacent to center**, are open to
+> traffic. The center bay is also currently kept deliberately closed.
 
 This finding corrected the Phase-0 first impression ("one continuous open
-plaza"): what actually exists under the bridge is **two discrete choke
-points** (the west open bay and the east open bay) with a closed structural
-wall between them, not one continuous open space. This physical fact places
-a hard ceiling on any future geometric design in this study (including the
-feasibility of a modern roundabout in S3), and is recorded in
-`config/assumptions.yml` under `bridge_geometry.span_structure`.
+plaza"): what actually exists under the bridge is **two comparatively wide
+open zones** (about two bays each, west and east) with a closed structural
+bay between them — not one continuous open space, and (per the user's
+direct correction this session, backed by fresh imagery evidence) **not
+two narrow single-bay choke points** either, as earlier versions of this
+report incorrectly claimed. This physical fact places a ceiling on any
+future geometric design in this study (including the feasibility of a
+modern roundabout in S3), and is recorded in `config/assumptions.yml`
+under `bridge_geometry.span_structure`. **Note:** this correction is purely
+descriptive — a direct code check confirmed none of the S1-S5 network-build
+scripts use this figure for actual topological decisions; all of them work
+from real OSM-derived nodes/edges, which were already correct, so the
+existing SUMO network did not need to be rebuilt.
 
 ### 2.3 Why microsimulation, and why SUMO?
 
@@ -212,8 +219,8 @@ Classical capacity analysis (HCM) was built for standard four-leg
 intersections / roundabouts, and its assumptions (orderly queuing,
 discrete, classifiable movements) are exactly what is violated at this
 site: informal weaving behavior, a high motorcycle share with inter-lane
-filtering, and two discrete choke points separated by an unconventional
-structural element. A microsimulation that models each vehicle
+filtering, and two comparatively wide open zones separated by an
+unconventional closed structural bay. A microsimulation that models each vehicle
 individually (not just aggregate flow) is the only method that can capture
 this complexity. SUMO (Simulation of Urban MObility) was chosen because it
 is open-source and scriptable, so the entire pipeline (network, demand,
@@ -329,6 +336,8 @@ representation of safe "first-come-first-served" fade-in merging, exactly
 the behavior observed in the imagery and confirmed by the user at
 Checkpoint 1 ("left turns are currently free and informal").
 
+![S0 — the real SUMO network under the bridge, no intervention at all (the comparison baseline for every diagram in this section — see `src/11_scenario_diagrams.py`)](../outputs/figures/scenario_diagrams/s0_en.png){#fig-s0-diagram width=80%}
+
 ### S1 — Signalized Intersection
 
 **Topological finding before design:** network inspection showed that
@@ -393,6 +402,8 @@ The actuated variant only gets this all-red interval added; its gap-out
 logic is untouched. **Honest result:** this redesign did not change S1's
 underlying story — see Section 7 (mechanism 5) for the full analysis.
 
+![S1 — the same 5 real conflict nodes (blue dots) in both fixed-time and actuated mode; the underlying geometry is identical, only the timing logic differs](../outputs/figures/scenario_diagrams/s1_fixed_en.png){#fig-s1-diagram width=80%}
+
 ### S2 — Turn Restriction + Physical U-Turn (RCUT / Median U-Turn)
 
 **Status: built and simulated (version 2 — full).** International
@@ -415,6 +426,8 @@ at each split point (matching the removed left-turn share) actually travels
 the "through -> U-turn -> return -> right turn" path — not just a
 statistical reassignment of destination. See
 `scenarios/S2_rcut/README.md`.
+
+![S2 (D=250m) — x markers show the 5 removed left-turn connections; short red lines show the U-turn connectors added at +-250m from center on the two long deck edges](../outputs/figures/scenario_diagrams/s2_en.png){#fig-s2-diagram width=80%}
 
 ### S3 — Asymmetric Roundabout (two options)
 
@@ -441,6 +454,10 @@ for this implementation's explicit limitations (the ring geometry is a
 straight-line-between-4-points approximation, not an engineered
 deflection/island design).
 
+![S3-constrained — single-lane arc ring (red) between the four real junction nodes, no existing edge/node removed](../outputs/figures/scenario_diagrams/s3_constrained_en.png){#fig-s3c-diagram width=80%}
+
+![S3-full — the same ring plus a direct east-west chord (conditional on the center bay being opened, requiring structural sign-off)](../outputs/figures/scenario_diagrams/s3_full_en.png){#fig-s3f-diagram width=80%}
+
 ### S4 — Channelization + Free Right Turn
 
 **Status: built and simulated.** The least aggressive geometric
@@ -452,6 +469,8 @@ channelized right-turn merge); the channelized right turn kept normal
 minor/yield priority. No new topology node was needed. "Removing curbside
 parking" was never modeled in the baseline, so it has no network effect
 here — see `scenarios/S4_channelization/README.md`.
+
+![S4 — the same 5 S1 conflict nodes, reverted from zipper to priority (green dots); no new edge](../outputs/figures/scenario_diagrams/s4_en.png){#fig-s4-diagram width=80%}
 
 ### S5 — Hybrid / Creative
 
@@ -481,6 +500,10 @@ The real signal, against expectation, was the **worst** of the three
 (lambda=1.4: 3,257.6 collisions per run, more than even S1's worst case;
 see Section 7 for the full analysis). See `scenarios/S5_hybrid/README.md`.
 
+![S5-metering — the same S3-constrained ring plus a short-cycle metering signal on the west leg (blue dot)](../outputs/figures/scenario_diagrams/s5_metering_en.png){#fig-s5m-diagram width=80%}
+
+![S5-bypass — the same ring plus a direct north-south bypass (red line); three control designs were tested (unconditional, yielding, real signal) sharing this same geometry — only the real-signal variant (shown here) adds a blue marker on the conflict node](../outputs/figures/scenario_diagrams/s5_oneway_signal_en.png){#fig-s5b-diagram width=80%}
+
 ### S2+S4 combined — left-turn removal + U-turn, simultaneous with right-turn channelization
 
 **Status: built and simulated (this session, per next-step item 3 in
@@ -498,6 +521,8 @@ interference because S2's nodes (diverges) and S4's nodes (merges) are two
 entirely separate sets of physical junctions — see
 `scenarios/S2_S4_combined/README.md` for the full node table and
 confirmation of no overlap.
+
+![S2+S4 combined — x markers (S2's removed left turns) and green dots (S4's channelization) on entirely separate physical nodes, applied simultaneously on one network](../outputs/figures/scenario_diagrams/s2s4_en.png){#fig-s2s4-diagram width=80%}
 
 ## 5. Results: All 6 Main Scenarios Plus One Combination
 

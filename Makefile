@@ -99,8 +99,12 @@ tune-s5-metering:
 	$(PYTHON) scenarios/S5_hybrid/tune_metering_cycle.py
 
 ## فاز ۳: نمودار KPI به تفکیک پا + نمودار حساسیت به λ
+## فاز ۴ (نشست جاری): + اسکچ شماتیک هر سناریو (src/11_scenario_diagrams.py)
+## — نیازمند اینکه net.xml همهٔ سناریوها از قبل ساخته شده باشد (بعد از
+## scenario-s1..scenario-s2s4 در زنجیرهٔ all)
 figures:
 	$(PYTHON) src/07_figures.py
+	$(PYTHON) src/11_scenario_diagrams.py
 
 ## رندر گزارش دوزبانه در هر سه فرمت (html/pdf/docx)
 report:
