@@ -13,7 +13,7 @@ export SUMO_HOME := $(SUMO_HOME_DIR)
 export PYTHONIOENCODING := utf-8
 export QUARTO_PYTHON := $(CURDIR)/$(PYTHON)
 
-.PHONY: all check-env sketch network patch-geometry demand webster-timing scenario-s1 scenario-s2 scenario-s3 scenario-s4 scenario-s5 run analyze statistics behavior-diagnostic figures report publish clean
+.PHONY: all check-env sketch network patch-geometry demand webster-timing scenario-s1 scenario-s2 scenario-s3 scenario-s4 scenario-s5 run analyze statistics behavior-diagnostic tune-s5-metering figures report publish clean
 
 all: check-env sketch network patch-geometry demand webster-timing scenario-s1 scenario-s2 scenario-s3 scenario-s4 scenario-s5 run analyze statistics figures report
 
@@ -85,6 +85,12 @@ statistics:
 ## فاز ۴: آزمون تشخیصی — S0/S1 با پارامترهای رفتاری پیش‌فرض SUMO (نه تهاجمی) تا سهم رفتار از سهم چراغ جدا شود
 behavior-diagnostic:
 	$(PYTHON) src/09_behavior_diagnostic.py
+
+## فاز ۴ (نشست ۴): جست‌وجوی سبک سیکل چراغ متردهندهٔ S5-metering — اختیاری،
+## در «all» نیست (مثل behavior-diagnostic)، چون نتیجه‌اش (۲۰ ثانیه) از قبل
+## در scenario-s5 کدنویسی شده؛ فقط برای بازتولید مستندسازی تصمیم طراحی
+tune-s5-metering:
+	$(PYTHON) scenarios/S5_hybrid/tune_metering_cycle.py
 
 ## فاز ۳: نمودار KPI به تفکیک پا + نمودار حساسیت به λ
 figures:

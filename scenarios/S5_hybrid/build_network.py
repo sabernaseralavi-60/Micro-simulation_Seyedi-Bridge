@@ -138,9 +138,15 @@ def build_ring_plain(s3, plain_prefix: pathlib.Path) -> tuple[ET.ElementTree, ET
     return nod_tree, edg_tree, con_tree, coords
 
 
-def build_metering(s3) -> pathlib.Path:
-    """میدان S3-constrained + چراغ متردهندهٔ تک‌گرهی روی پای غالب (غرب)."""
-    plain_prefix = SCEN_DIR / "plain" / "seyedi_s5_metering"
+def build_metering(s3, cycle_time: int | None = 20, out_name: str = "seyedi_S5_metering.net.xml",
+                    plain_name: str = "seyedi_s5_metering") -> pathlib.Path:
+    """میدان S3-constrained + چراغ متردهندهٔ تک‌گرهی روی پای غالب (غرب).
+
+    `cycle_time` قابل‌پارامتر شد (نشست ۴) تا `tune_metering_cycle.py` بتواند
+    چند سیکل کاندید را بسازد و با اجرای تجربی کوتاه بهترین را انتخاب کند —
+    به‌جای یک عدد ثابت دلخواه؛ رجوع به README همین فولدر برای نتیجهٔ آزمایش
+    و سیکل نهایی انتخاب‌شده."""
+    plain_prefix = SCEN_DIR / "plain" / plain_name
     nod_tree, edg_tree, con_tree, coords = build_ring_plain(s3, plain_prefix)
 
     # گرهٔ غرب را چراغ متردهنده می‌کنیم — همان تکنیک S1: بازتایپ گره به
@@ -158,7 +164,7 @@ def build_metering(s3) -> pathlib.Path:
 
     net_dir = SCEN_DIR / "network"
     net_dir.mkdir(parents=True, exist_ok=True)
-    out_net = net_dir / "seyedi_S5_metering.net.xml"
+    out_net = net_dir / out_name
     netconvert = SUMO_HOME / "bin" / "netconvert.exe"
     cmd = [
         str(netconvert),
@@ -170,16 +176,39 @@ def build_metering(s3) -> pathlib.Path:
         "--output-file", str(out_net),
         "--no-turnarounds", "true",
         "--tls.default-type", "static",
-        "--tls.cycle.time", "20",  # سیکل کوتاهِ متردهنده — نه سیکل کامل وبستر S1
     ]
+    # نکتهٔ حیاتی (رفع باگ نشست ۴): netconvert سیکل هدف را وقتی با حداقل
+    # سبز/زرد هر فاز سازگار نباشد **بی‌صدا نادیده می‌گیرد** — فقط یک هشدار
+    # چاپ می‌کند («cannot be adapted») و به سیکل پیش‌فرض خودش برمی‌گردد؛
+    # cycle_time=None یعنی «از همین رفتار پیش‌فرض استفاده کن» (بدون فلگ)،
+    # نه یک مقدار نامعتبر. هر فراخوانی باید تلLogic تولیدشده را بازرسی کند
+    # تا سیکل واقعاً اعمال‌شده تأیید شود (رجوع به tune_metering_cycle.py).
+    if cycle_time is not None:
+        cmd += ["--tls.cycle.time", str(cycle_time)]
     print("[run]", " ".join(cmd))
     subprocess.run(cmd, check=True)
     print(f"[ok] نوشته شد: {out_net}")
     return out_net
 
 
-def build_oneway_priority(s3) -> pathlib.Path:
-    """میدان S3-constrained + بای‌پس مستقیم شمال-جنوب با اولویت بالاتر از حلقه."""
+def build_oneway_priority(s3, bypass_junction_radius: float = 10.0) -> pathlib.Path:
+    """میدان S3-constrained + بای‌پس مستقیم شمال-جنوب با اولویت بالاتر از حلقه.
+
+    **رفع باگ هندسی (نشست ۴):** ساخت اولیه در ساخت شبکه هشدار زیر را از
+    netconvert می‌گرفت: «Intersecting left turns at junction 6711509176 from
+    lane s5_bypass_N_S_0 and lane 610531293#0-AddedOffRampEdge_1 (increase
+    junction radius to avoid this)». علت: در نبود یک `radius` صریح روی گرهٔ
+    S، netconvert شعاع تقاطع را کوچک محاسبه می‌کند و مسیرهای پیچشیِ داخلیِ دو
+    حرکت گردش-به-چپِ متفاوت (بای‌پس تازه‌افزوده و لِینِ دومِ رمپِ موجود) در
+    فضای کوچک همدیگر را قطع می‌کنند — یک ناسازگاری هندسی واقعی در شکل داخلی
+    تقاطع، نه فقط یک هشدار زینتی: چون شکل لِین‌های داخلی مبنای محاسبهٔ
+    تعارض/برخورد SUMO در حین اجراست، همین تنگی می‌تواند بخشی از انفجار
+    برخوردِ مشاهده‌شده در این سناریو را (در کنار مکانیزم رفتار تهاجمی
+    کالیبره‌نشده) توضیح دهد. راه‌حل مستقیماً از پیشنهاد خودِ netconvert
+    گرفته شده: تنظیم `radius` صریح روی گرهٔ S. با آزمایش دستی (netconvert
+    مستقیم، بیرون از این اسکریپت) شعاع ۸ متر برای رفع کامل هشدار کافی بود؛
+    ۱۰ متر (این مقدار پیش‌فرض) با حاشیهٔ اطمینان انتخاب شد — نزدیک به شعاع
+    گوشهٔ متعارف یک تقاطع شهری کوچک، نه یک عدد اختیاری."""
     plain_prefix = SCEN_DIR / "plain" / "seyedi_s5_oneway"
     nod_tree, edg_tree, con_tree, coords = build_ring_plain(s3, plain_prefix)
 
@@ -189,6 +218,13 @@ def build_oneway_priority(s3) -> pathlib.Path:
     con_root = con_tree.getroot()
 
     n_id, s_id = s3.RING_NODES["N"], s3.RING_NODES["S"]
+
+    nod_path = plain_prefix.with_suffix(".nod.xml")
+    nod_root = nod_tree.getroot()
+    for n in nod_root.findall("node"):
+        if n.get("id") == s_id:
+            n.set("radius", str(bypass_junction_radius))
+    nod_tree.write(nod_path, encoding="UTF-8", xml_declaration=True)
 
     def add_bypass(eid, frm_key, to_key):
         el = ET.SubElement(edg_root, "edge")
@@ -247,7 +283,16 @@ def build_oneway_priority(s3) -> pathlib.Path:
 def main() -> None:
     fix_console_encoding()
     s3 = _load_s3_module()
-    build_metering(s3)
+    # سیکل ۲۰ ثانیه با جست‌وجوی تجربی `tune_metering_cycle.py` بازآزمایی شد:
+    # ۶ کاندید (۲۰/۳۰/۴۰/۵۰/۶۰ ثانیه + پیش‌فرض netconvert=۹۰ ثانیه) با ۳ seed
+    # سبک در λ=۱.۰/۱.۴ اجرا شدند؛ در λ=۱.۴ (نقطهٔ تمایزدهنده)، ۲۰ ثانیه
+    # بهترین رتبهٔ نرمال‌شده را روی هر سهٔ معیار گرفت (رجوع به
+    # scenarios/S5_hybrid/tune_metering_cycle_result.csv و README برای جدول
+    # کامل و بحث دربارهٔ واریانس بالای این جست‌وجوی سبک). نتیجه: انتخاب
+    # اولیهٔ ۲۰ ثانیه تأیید تجربی گرفت، نه یک عدد صرفاً دلخواه.
+    build_metering(s3, cycle_time=20)
+    # radius=10 روی گرهٔ جنوب، رفع مستند تداخل هندسی بای‌پس (رجوع به
+    # docstring build_oneway_priority بالا).
     build_oneway_priority(s3)
 
 
