@@ -191,25 +191,13 @@ def build_metering(s3, cycle_time: int | None = 20, out_name: str = "seyedi_S5_m
     return out_net
 
 
-def build_oneway_priority(s3, bypass_junction_radius: float = 10.0) -> pathlib.Path:
-    """میدان S3-constrained + بای‌پس مستقیم شمال-جنوب با اولویت بالاتر از حلقه.
-
-    **رفع باگ هندسی (نشست ۴):** ساخت اولیه در ساخت شبکه هشدار زیر را از
-    netconvert می‌گرفت: «Intersecting left turns at junction 6711509176 from
-    lane s5_bypass_N_S_0 and lane 610531293#0-AddedOffRampEdge_1 (increase
-    junction radius to avoid this)». علت: در نبود یک `radius` صریح روی گرهٔ
-    S، netconvert شعاع تقاطع را کوچک محاسبه می‌کند و مسیرهای پیچشیِ داخلیِ دو
-    حرکت گردش-به-چپِ متفاوت (بای‌پس تازه‌افزوده و لِینِ دومِ رمپِ موجود) در
-    فضای کوچک همدیگر را قطع می‌کنند — یک ناسازگاری هندسی واقعی در شکل داخلی
-    تقاطع، نه فقط یک هشدار زینتی: چون شکل لِین‌های داخلی مبنای محاسبهٔ
-    تعارض/برخورد SUMO در حین اجراست، همین تنگی می‌تواند بخشی از انفجار
-    برخوردِ مشاهده‌شده در این سناریو را (در کنار مکانیزم رفتار تهاجمی
-    کالیبره‌نشده) توضیح دهد. راه‌حل مستقیماً از پیشنهاد خودِ netconvert
-    گرفته شده: تنظیم `radius` صریح روی گرهٔ S. با آزمایش دستی (netconvert
-    مستقیم، بیرون از این اسکریپت) شعاع ۸ متر برای رفع کامل هشدار کافی بود؛
-    ۱۰ متر (این مقدار پیش‌فرض) با حاشیهٔ اطمینان انتخاب شد — نزدیک به شعاع
-    گوشهٔ متعارف یک تقاطع شهری کوچک، نه یک عدد اختیاری."""
-    plain_prefix = SCEN_DIR / "plain" / "seyedi_s5_oneway"
+def _build_bypass_variant(s3, *, plain_name: str, out_name: str, bypass_priority: int,
+                           unconditional: bool, bypass_junction_radius: float = 10.0) -> pathlib.Path:
+    """هستهٔ مشترک ساخت بای‌پس شمال-جنوب، با اولویت و نوع حق‌تقدم قابل‌پارامتر —
+    تا `build_oneway_priority` (حق‌تقدم بدون قیدوشرط) و `build_oneway_yield`
+    (حق‌تقدم عادی/میانه، بدون pass، رجوع به بخش ۱۲ گزارش) یک پیاده‌سازی را
+    به‌اشتراک بگذارند، نه دو کپی مجزا."""
+    plain_prefix = SCEN_DIR / "plain" / plain_name
     nod_tree, edg_tree, con_tree, coords = build_ring_plain(s3, plain_prefix)
 
     edg_path = plain_prefix.with_suffix(".edg.xml")
@@ -217,7 +205,7 @@ def build_oneway_priority(s3, bypass_junction_radius: float = 10.0) -> pathlib.P
     edg_root = edg_tree.getroot()
     con_root = con_tree.getroot()
 
-    n_id, s_id = s3.RING_NODES["N"], s3.RING_NODES["S"]
+    s_id = s3.RING_NODES["S"]
 
     nod_path = plain_prefix.with_suffix(".nod.xml")
     nod_root = nod_tree.getroot()
@@ -233,7 +221,7 @@ def build_oneway_priority(s3, bypass_junction_radius: float = 10.0) -> pathlib.P
         el.set("to", s3.RING_NODES[to_key])
         el.set("numLanes", "1")
         el.set("speed", s3.RING_SPEED)
-        el.set("priority", "80")  # حتی بالاتر از حلقه (۵۰) — عبور مستقیم، اولویت اول
+        el.set("priority", str(bypass_priority))
         el.set("shape", s3.fmt_shape([coords[frm_key], coords[to_key]]))
         return eid
 
@@ -251,7 +239,8 @@ def build_oneway_priority(s3, bypass_junction_radius: float = 10.0) -> pathlib.P
             c.set("to", eid)
             c.set("fromLane", "0")
             c.set("toLane", "0")
-            c.set("pass", "true")
+            if unconditional:
+                c.set("pass", "true")
         for out_edge in out_edges:
             c = ET.SubElement(con_root, "connection")
             c.set("from", eid)
@@ -262,7 +251,7 @@ def build_oneway_priority(s3, bypass_junction_radius: float = 10.0) -> pathlib.P
 
     net_dir = SCEN_DIR / "network"
     net_dir.mkdir(parents=True, exist_ok=True)
-    out_net = net_dir / "seyedi_S5_oneway.net.xml"
+    out_net = net_dir / out_name
     netconvert = SUMO_HOME / "bin" / "netconvert.exe"
     cmd = [
         str(netconvert),
@@ -280,6 +269,50 @@ def build_oneway_priority(s3, bypass_junction_radius: float = 10.0) -> pathlib.P
     return out_net
 
 
+def build_oneway_priority(s3, bypass_junction_radius: float = 10.0) -> pathlib.Path:
+    """میدان S3-constrained + بای‌پس مستقیم شمال-جنوب با اولویت بالاتر از حلقه
+    (priority=80، `pass="true"` — حق‌تقدم بدون قیدوشرط).
+
+    **رفع باگ هندسی (نشست ۴):** ساخت اولیه در ساخت شبکه هشدار زیر را از
+    netconvert می‌گرفت: «Intersecting left turns at junction 6711509176 from
+    lane s5_bypass_N_S_0 and lane 610531293#0-AddedOffRampEdge_1 (increase
+    junction radius to avoid this)». علت: در نبود یک `radius` صریح روی گرهٔ
+    S، netconvert شعاع تقاطع را کوچک محاسبه می‌کند و مسیرهای پیچشیِ داخلیِ دو
+    حرکت گردش-به-چپِ متفاوت (بای‌پس تازه‌افزوده و لِینِ دومِ رمپِ موجود) در
+    فضای کوچک همدیگر را قطع می‌کنند. راه‌حل مستقیماً از پیشنهاد خودِ
+    netconvert گرفته شده: تنظیم `radius` صریح روی گرهٔ S (۱۰ متر، با
+    حاشیهٔ اطمینان روی حداقل تجربی ۸ متر).
+
+    **نتیجهٔ صادقانهٔ این رفع (نشست ۴):** هشدار کاملاً حذف شد، اما بهبود
+    قابل‌اتکایی در نتیجهٔ شبیه‌سازی‌شده نداد و یک ریسک دنبالهٔ جدی (۱ از ۱۰
+    seed با فروپاشی کامل) آشکار کرد — رجوع به بخش ۷ گزارش (مکانیزم ۵).
+    این نشان داد ریشهٔ اصلی مشکل رفتاری است (حق‌تقدم بدون قیدوشرط از یک
+    حرکت پرسرعت روی یک گرهٔ شلوغ)، نه صرفاً هندسی؛ `build_oneway_yield`
+    زیر دقیقاً همین فرضیه را آزمون می‌کند."""
+    return _build_bypass_variant(
+        s3, plain_name="seyedi_s5_oneway", out_name="seyedi_S5_oneway.net.xml",
+        bypass_priority=80, unconditional=True, bypass_junction_radius=bypass_junction_radius)
+
+
+def build_oneway_yield(s3, bypass_junction_radius: float = 10.0) -> pathlib.Path:
+    """آزمون «کنترل فعال» فصل ۱۲ گزارش (نشست ۵): همان بای‌پس، اما به‌جای
+    حق‌تقدم بدون قیدوشرط (priority=80 + pass="true")، حق‌تقدم آن به زیر
+    حلقه (priority=30 < ۵۰ حلقه) کاهش می‌یابد و `pass="true"` حذف می‌شود —
+    یعنی بای‌پس دیگر «همیشه برنده» نیست، باید مثل هر تقاطع priority عادی
+    این شبکه (S0/S4) برای ورود جای خالی پیدا کند و حق‌تقدم واقعی بدهد.
+
+    فرضیهٔ آزمون (مستقیماً از یافتهٔ نشست ۴): چون رفع صرفاً هندسی
+    (`build_oneway_priority`) کمکی نکرد، ریشهٔ اصلی «حق‌تقدم بدون قیدوشرط
+    روی یک تقاطع شلوغ + رفتار تهاجمی» است، نه هندسهٔ لِین داخلی؛ اگر این
+    فرضیه درست باشد، حذف حق‌تقدم بدون قیدوشرط باید برخورد/ریسک دنباله را
+    کاهش دهد — به‌قیمت افزایش تأخیر بای‌پس (چون دیگر تضمینی برای عبور آزاد
+    ندارد). اگر باز هم بهبود ندهد، شاهد قوی‌تری برای نتیجه‌گیری «این محل
+    بدون جداسازی ترازی کامل قابل‌حل نیست» به‌دست می‌آید."""
+    return _build_bypass_variant(
+        s3, plain_name="seyedi_s5_oneway_yield", out_name="seyedi_S5_oneway_yield.net.xml",
+        bypass_priority=30, unconditional=False, bypass_junction_radius=bypass_junction_radius)
+
+
 def main() -> None:
     fix_console_encoding()
     s3 = _load_s3_module()
@@ -294,6 +327,9 @@ def main() -> None:
     # radius=10 روی گرهٔ جنوب، رفع مستند تداخل هندسی بای‌پس (رجوع به
     # docstring build_oneway_priority بالا).
     build_oneway_priority(s3)
+    # آزمون کنترل فعال (نشست ۵، بخش ۱۲ گزارش): بای‌پس با حق‌تقدم عادی
+    # به‌جای بدون‌قیدوشرط — رجوع به docstring build_oneway_yield بالا.
+    build_oneway_yield(s3)
 
 
 if __name__ == "__main__":

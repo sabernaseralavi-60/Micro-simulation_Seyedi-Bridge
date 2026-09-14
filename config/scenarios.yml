@@ -156,9 +156,14 @@ scenarios:
       **oneway_priority** — همان حلقه + یک بای‌پس مستقیم دوطرفهٔ شمال-جنوب با
       اولویت حتی بالاتر از خودِ حلقه، برای عبور مستقیم بلوار سیدی بدون ورود
       به چرخهٔ گردشی — برخلاف وترِ S3-full، این بای‌پس نیازی به بازشدن دهانهٔ
-      مرکزی ندارد (بلوار سیدی همین حالا هم‌سطح عبور می‌کند).
+      مرکزی ندارد (بلوار سیدی همین حالا هم‌سطح عبور می‌کند). نشست ۴: تداخل
+      هندسی مستندش (هشدار netconvert) رفع شد اما نتیجه بهبود نیافت — رجوع
+      به بخش ۷ گزارش. **oneway_yield** (نشست ۵) — همان بای‌پس، اما با
+      حق‌تقدم عادی (priority=30 زیر ۵۰ حلقه، بدون pass بدون‌قیدوشرط) به‌جای
+      حق‌تقدم بدون‌قیدوشرط — آزمون مستقیم فرضیهٔ «کنترل فعال/حذف حق‌تقدم
+      بدون‌قیدوشرط، نه صرفاً هندسه، لازم است».
       رجوع به scenarios/S5_hybrid/README.md برای جزئیات و محدودیت‌های این
-      دو نسخهٔ اولیه.
+      نسخه‌ها.
     control_variants:
       metering:
         label_fa: "میدان + چراغ متردهنده روی پای غالب"
@@ -166,7 +171,12 @@ scenarios:
         out_dir: "scenarios/S5_hybrid/out/metering"
         table_prefix: "s5_metering"
       oneway_priority:
-        label_fa: "میدان + بای‌پس اولویت‌دار شمال-جنوب"
+        label_fa: "میدان + بای‌پس اولویت‌دار شمال-جنوب (حق‌تقدم بدون‌قیدوشرط)"
         net_file: "scenarios/S5_hybrid/network/seyedi_S5_oneway.net.xml"
         out_dir: "scenarios/S5_hybrid/out/oneway"
         table_prefix: "s5_oneway"
+      oneway_yield:
+        label_fa: "میدان + بای‌پس شمال-جنوب (حق‌تقدم عادی/یالدهنده)"
+        net_file: "scenarios/S5_hybrid/network/seyedi_S5_oneway_yield.net.xml"
+        out_dir: "scenarios/S5_hybrid/out/oneway_yield"
+        table_prefix: "s5_oneway_yield"
