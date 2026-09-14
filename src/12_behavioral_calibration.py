@@ -82,14 +82,25 @@ def _load_module(name: str, path: pathlib.Path):
     return mod
 
 
+# حداکثر مجاز طبق XSD واقعی SUMO برای هر پارامتر (نه یک برآورد) — بدون این
+# سقف، ترایال ۸ (impatience_multiplier=1.165 روی taxi.impatience=0.9) واقعاً
+# شکست خورد: jtrrouter با خطای schema «value '1.0486' must be <= maxInclusive
+# facet value '1'» روی flows.xml رد شد. یافته و تکرارشده مستقیماً (نه حدس).
+FIELD_MAX = {"sigma": 1.0, "impatience": 1.0}
+
+
 def scaled_vcfg(base_vcfg: dict, multipliers: dict[str, float]) -> dict:
-    """کپی عمیق vcfg با ۶ ضریب یکسان روی همهٔ ردیف‌های vtypes اعمال‌شده."""
+    """کپی عمیق vcfg با ۶ ضریب یکسان روی همهٔ ردیف‌های vtypes اعمال‌شده،
+    با سقف مطابق XSD واقعی SUMO برای پارامترهایی که محدودهٔ [0,1] دارند."""
     vcfg = copy.deepcopy(base_vcfg)
     for vt in vcfg["vtypes"].values():
         for field in PARAM_FIELDS:
             if field in vt:
                 mult = multipliers[f"{field}_multiplier"]
-                vt[field] = round(vt[field] * mult, 4)
+                scaled = vt[field] * mult
+                if field in FIELD_MAX:
+                    scaled = min(scaled, FIELD_MAX[field])
+                vt[field] = round(scaled, 4)
     return vcfg
 
 
@@ -213,7 +224,22 @@ def export_results(study: optuna.Study) -> None:
     print(f"[ok] نوشته شد: {TABLES_DIR / 'behavioral_calibration_pareto.csv'} "
           f"({len(df_pareto)} نقطهٔ Pareto)")
 
+    correlation_table(df)
     plot_pareto(df, df_pareto)
+
+
+def correlation_table(df: pd.DataFrame) -> None:
+    """همبستگی خام هرکدام از ۶ ضریب با دو هدف — برای پاسخ به پرسش اصلی این
+    جست‌وجو: کدام محور (اگر هیچ‌کدام نه) واقعاً فروپاشی برخورد را می‌راند؟
+    خروجی مبنای عدد گزارش می‌شود (اصل «یک‌بار محاسبه، چندبار گزارش»)."""
+    mult_cols = [c for c in df.columns if c.endswith("_multiplier")]
+    corr = df[["mean_timeloss_s", "mean_collisions"] + mult_cols].corr()
+    out = corr.loc[mult_cols, ["mean_timeloss_s", "mean_collisions"]].reset_index()
+    out.columns = ["parameter_multiplier", "corr_with_mean_timeloss", "corr_with_mean_collisions"]
+    out = out.sort_values("corr_with_mean_collisions", key=lambda s: s.abs(), ascending=False)
+    out.to_csv(TABLES_DIR / "behavioral_calibration_correlations.csv", index=False)
+    print(f"[ok] نوشته شد: {TABLES_DIR / 'behavioral_calibration_correlations.csv'}")
+    print(out.round(3).to_string(index=False))
 
 
 def plot_pareto(df_all: pd.DataFrame, df_pareto: pd.DataFrame) -> None:

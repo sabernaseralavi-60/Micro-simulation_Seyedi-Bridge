@@ -41,11 +41,18 @@ ineffective — it produced the **worst** outcome of this entire study
 (lambda = 1.4: 3,257.6 collisions per run). By contrast, **the combined
 S2+S4 scenario** still gives this study's best safety result (an 80-84%
 collision reduction versus S0 at lambda >= 1.0, significant) — at the top
-of the preliminary ranking (Section 9). What remains is a more careful
-geometric design for S3, and for the S5 bypass either full grade
-separation or behavioral calibration to test whether all three rejected
-at-grade fixes are an artifact of uncalibrated aggressive behavior — see
-Section 12.
+of the preliminary ranking (Section 9). **That question has now largely
+been answered:** a two-objective Optuna behavioral robustness search (40
+trials, Section 7 mechanism 7) found the S1/S5-bypass collision blowup is
+sensitive almost entirely to `tau` (the follower reaction time headway) —
+not to the motorcycle filtering/foe-ignoring parameters that looked most
+suspect. This is still not calibration against field data (the *correct*
+value of `tau` remains unknown, Section 10), but it narrows the claim from
+a broad "aggressive behavior" label to one specific, testable axis. What
+remains is a more careful geometric design for S3 (for which this
+session's new finding about the bridge's real pier structure — Section
+2.2 — now gives a genuine starting point) and, for the S5 bypass, full
+grade separation — see Section 12.
 :::
 
 ## 1. Executive Summary
@@ -950,6 +957,59 @@ expected; when an intervention itself adds a new conflict (rather than
 only removing an existing one), that cumulative benefit is not guaranteed
 and can reverse.
 
+**7. Behavioral robustness search (Optuna, this session) — which
+parameter actually drives the collision blowup?** Mechanism 2 above
+showed that "uncalibrated aggressive behavior" interacts with something,
+but not *which* of the 6 aggressive parameters in `vtypes.yml` (`tau`,
+`minGap`, `sigma`, `impatience`, `jmIgnoreFoeProb`, `lcAssertive`) is
+responsible -- and with no field data yet available for real calibration
+(Section 10), this was answered with a **two-objective robustness search**
+(Optuna, NSGA-II): all 6 parameters were searched uniformly over 0.7-1.3x
+their current values (40 trials x S1-fixed and S5-oneway_priority x 2
+seeds at lambda=1.4), minimizing mean timeloss and mean collisions
+jointly. Full method in `config/assumptions.yml ->
+experiment_design.behavioral_calibration_search`.
+
+**Result, explicit and measured:** the delay-collision relationship in
+this parameter space is **not a real Pareto trade-off** -- it is nearly
+monotonic (both objectives improve or worsen together), and that
+relationship is almost entirely explained by one axis: **`tau`** (the
+follower reaction time headway), with a -0.87 correlation with mean
+collisions and -0.83 with mean timeloss -- far stronger than the other 5
+parameters (0.01 to 0.39, see
+`outputs/tables/behavioral_calibration_correlations.csv`). The raw data
+(`outputs/tables/behavioral_calibration_trials.csv`) shows a clear
+**threshold**: below a `tau_multiplier` of ~1.0 (i.e. `tau` shorter than
+the project's current value), mean collisions are almost always between
+1,500 and 8,000 per run; from ~1.06 upward (i.e. `tau` at or above
+**SUMO's own default**), that number collapses to under 900, and by 1.2
+to under 130 -- alongside a large, simultaneous drop in timeloss (not a
+trade against it). The project's current baseline point (black stars in
+the figure below) sits squarely in the middle of this range, not at
+either extreme -- room for simultaneous improvement on both objectives
+genuinely exists.
+
+![Behavioral robustness search — the near-monotonic timeloss/collision relationship across the aggressive parameter space; stars = the project's current baseline](../outputs/figures/behavioral_calibration_pareto.png){#fig-behavioral-pareto width=85%}
+
+**Implication for mechanism 2:** this finding does not overturn mechanism
+2 -- it **sharpens** it. "Aggressive behavior" was a broad label; this
+session's evidence shows the dominant contributor among this study's 6
+aggressive parameters is almost entirely `tau`, not
+`jmIgnoreFoeProb`/`lcAssertive` (the motorcycle filtering/foe-ignoring
+parameters that the report's original hypothesis considered most
+suspect -- their correlation with collisions is essentially zero: 0.01
+and 0.04).
+
+**Methodological honesty:** 1 of 40 trials (2.5%) failed with a real SUMO
+schema error (one vType's `impatience` exceeded the valid 1.0 ceiling
+because the search multiplier was applied without a bound) -- root-caused
+and fixed in the script (an explicit ceiling for `impatience`/`sigma`),
+but that one trial was not re-run (poor cost/benefit for 1 of 40) and was
+excluded from analysis (39 trials analyzed). **This is still not
+calibration-to-groundtruth** -- the result says the collision blowup is
+sensitive to one specific parameter, not what that parameter's "correct"
+value is; that question still needs field data (Section 10).
+
 **What this means for the report:** the "S1 worse than S0" finding should
 not be read as a definitive verdict on the real-world value of traffic
 signals. It says: **a simple Webster-designed signal on under-saturated
@@ -1086,7 +1146,7 @@ turning-movement counts.**
 | 15-minute turning-movement counts, AM and PM peaks | Drone/elevated-camera video + automated counting (YOLO + ByteTrack) | Moderate | **Critical** |
 | Fleet composition and motorcycle share | Same video | Low | High |
 | Queue length and clearance time | Same video | Low | High |
-| **Behavioral parameters (tau, jmIgnoreFoeProb, real follower gap in queue)** | Vehicle trajectory extraction from video + Optuna/GA fitting | Moderate | **Critical (confirmed by the Phase-4 diagnostic)** |
+| **Behavioral parameters, especially `tau` (real follower reaction gap in queue)** | Vehicle trajectory extraction from video + Optuna/GA fitting | Moderate | **Critical (confirmed by the Phase-4 diagnostic; Section 7's robustness search showed the dominant contributor among the 6 parameters is almost entirely `tau` -- this row now has a specific, scoped target, not a broad list)** |
 | Saturation flow | Standard field measurement | Low | Medium |
 | Route travel time | GPS floating car, 6-10 runs per peak | Low | High |
 | Regional OD | Ride-hailing / mobile data / interviews | High | Version 2 |
@@ -1188,20 +1248,29 @@ performed on a held-out period (e.g., a different day's peak).
    calibration to test whether all three rejected fixes are an artifact of
    uncalibrated aggressive behavior rather than a genuine geometric/control
    weakness — see item 2.
-2. **Limited behavioral calibration** (Section 10) — now tied with item 1
-   in priority, for two independent reasons: (a) **S2+S4 combined** is the
-   current best implementation candidate, and its safety result, like every
-   other scenario in this study, is sensitive to uncalibrated behavioral
-   parameters; (b) the S5-bypass's three-way rejection (item 1) and S1's
-   ineffective redesign still leave open whether these are real
-   geometric/control failures or an artifact of aggressive behavior — the
-   Section 6 diagnostic (which answered exactly this question for S1)
-   gives a clear template for repeating the same test on S5-bypass.
+2. **The robustness half is done; the real-value half remains.** Section
+   7's mechanism-7 Optuna search showed that, of the 6 aggressive
+   parameters, almost all of the S1/S5-bypass collision blowup traces to
+   `tau`, not the filtering/foe-ignoring parameters that looked most
+   suspect. That largely answers whether these failures are real
+   geometric/control failures or an artifact of aggressive behavior
+   (answer: largely behavioral, and specifically `tau`). **What remains
+   open:** which `tau` value is actually *correct* for Kerman's fleet —
+   only answerable with field speed/headway counts (Section 10), not more
+   parameter search. Until that data exists, changing `tau`'s baseline
+   value in `config/vtypes.yml` (and re-running the core scenarios with
+   it) is a modeling decision that must be raised explicitly with the
+   user, not applied unilaterally — the Optuna result only shows *where*
+   the sensitivity is, not that the current value is *wrong*.
 3. **More precise S3 geometric design:** replace the current single-lane
    arc ring with a real roundabout (engineered radius/deflection/splitter
    island) — S3's current result is still likely more pessimistic than a
    real engineered design; this automatically carries over to S5-metering,
-   since it is built on the same ring.
+   since it is built on the same ring. **New finding this session**
+   (Section 2.2): the real closed three-bay island under the bridge
+   already has the geometry of a roundabout's central island — a natural
+   starting point for this more precise design, rather than a fully
+   estimated ring.
 4. Global sensitivity analysis (Sobol/factorial) over lambda, left-turn
    share, motorcycle share, tau, and turning radius — now including S2+S4,
    to see how robust its safety benefit is to peak demand and turn-share
