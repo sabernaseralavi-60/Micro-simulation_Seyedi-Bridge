@@ -86,33 +86,40 @@ report, with one command (`make all`). As of this version:
   back to one after an experiment showed two lanes *increases* collisions)
   eliminated teleports entirely and visibly reduced collisions — see
   `scenarios/S3_roundabout/README.md`.
-- **S5 (hybrid) was built, simulated, and — in this same session — had its
-  documented geometric issue fixed and its full batch rerun** (both
-  options: roundabout + metering, roundabout + priority north-south
-  bypass). The two variants diverge sharply: **metering** genuinely
-  improves on the bare S3-constrained ring at peak demand (max queue 106 m
-  vs. the bare ring's 147 m) and is also more robust (its worst single seed
-  at lambda=1.4 is only 44 s / 483 collisions); its 20 s cycle was
-  empirically checked, not just assumed. **The north-south bypass** had its
-  documented geometric conflict (a netconvert "intersecting left turns"
-  warning) fully resolved exactly as netconvert's own diagnostic suggested
-  (widening the junction radius) — but this fix **did not produce a
-  reliable improvement**: at lambda=1.4, mean delay actually rose to 61.7 s
-  (+126% vs. S0), though no longer statistically significant (p=0.13)
-  because variance exploded — 9 of 10 seeds cluster around a more
-  reasonable ~42 s, but **1 of 10 seeds collapses completely** (242 s delay,
-  6,009 collisions in a single run), a scale that exceeds even **S1-fixed's
-  own worst case** (56.0 s, 1,256 collisions/run). This is an honest,
-  reported negative result: the fix eliminated netconvert's specific
-  warning but not the scenario's underlying fragility — see Section 12 for
-  what a real fix likely requires.
+- **S5 (hybrid) was built, simulated, and — across this and a follow-up
+  session — put through two rounds of geometric/control revision on its
+  bypass variant** (both options: roundabout + metering, roundabout +
+  priority north-south bypass). The two variants diverge sharply:
+  **metering** genuinely improves on the bare S3-constrained ring at peak
+  demand (max queue 106 m vs. the bare ring's 147 m) and is also more
+  robust (its worst single seed at lambda=1.4 is only 44 s / 483
+  collisions); its 20 s cycle was empirically checked, not just assumed.
+  **The north-south bypass** went through two rounds of revision and failed
+  honestly both times. Round 1: its documented geometric conflict (a
+  netconvert "intersecting left turns" warning) was fully resolved exactly
+  as netconvert's own diagnostic suggested (widening the junction radius) —
+  but this fix did not produce a reliable improvement: at lambda=1.4, mean
+  delay actually rose to 61.7 s (+126% vs. S0), no longer statistically
+  significant (p=0.13) because variance exploded — 9 of 10 seeds cluster
+  around a more reasonable ~42 s, but 1 of 10 seeds collapses completely
+  (242 s delay, 6,009 collisions in a single run). Round 2, testing the
+  resulting hypothesis directly: the bypass's unconditional priority
+  (edge priority 80, `pass="true"`) was lowered to a normal yielding
+  priority (30, below the ring's 50, no `pass`) — but the result was worse,
+  not better: at lambda=1.4, collisions rose to 1,526.5 per run, this time
+  **uniformly across all 10 seeds** (428-4,498 collisions each) rather than
+  a rare collapse, and the delay/collision differences from S0 became
+  cleanly significant at every lambda level (p<0.05). Neither priority
+  scheme works; the conflict point itself, not its priority design, is the
+  problem — see Section 12 for what a real fix likely requires.
 - **Preliminary summary (not final, based on complete data for all 6
-  scenarios):** **S4 and S0 are effectively tied at the top of the current
-  ranking**; **S2 close behind, with a real edge at peak demand**; **S3
-  needs more careful geometric design before a final judgment**; **S1 and
-  S5's bypass variant are not recommended as-is; S5's metering variant sits
-  closer to S3's tier** (needs refinement, but shows a genuinely promising
-  signal). See Section 9 (ranking) and Section 8 (SWOT) for detail.
+  scenarios and both S5-bypass revision attempts):** **S4 and S0 are
+  effectively tied at the top of the current ranking**; **S2 close behind,
+  with a real edge at peak demand**; **S3 and S5's metering variant need
+  more careful geometric/control design before a final judgment, but show a
+  genuinely promising signal**; **S1 and both of S5's tested bypass designs
+  are not recommended as-is**. See Section 9 (ranking) and Section 8
+  (SWOT) for detail.
 
 ## 2. Problem Statement and Background
 
@@ -388,19 +395,24 @@ here — see `scenarios/S4_channelization/README.md`.
 ### S5 — Hybrid / Creative
 
 **Status: built, simulated, and geometrically/control-wise revised (the
-first two of three candidate ideas).** Both were built on the
-S3-constrained ring infrastructure: **metering** (roundabout + a
-single-node metering signal on the west leg, a 20 s cycle empirically
-checked against alternatives) and **oneway_priority** (roundabout + a
-direct two-way north-south bypass with priority even higher than the ring
-itself — unlike S3-full's chord, this bypass does not need the center bay
-opened, since Seyedi Blvd already crosses at grade). The third idea
-(opening the center bay for light-vehicle movements) conceptually overlaps
-with S3-full and was not built. Both variants perform worse than S0, but at
+first two of three candidate ideas; the bypass tested under two different
+priority designs).** All three built variants sit on the S3-constrained
+ring infrastructure: **metering** (roundabout + a single-node metering
+signal on the west leg, a 20 s cycle empirically checked against
+alternatives), **oneway_priority** (roundabout + a direct two-way
+north-south bypass with unconditional priority even higher than the ring
+itself), and **oneway_yield** (the same bypass with normal yielding
+priority instead — lower than the ring, no unconditional right-of-way).
+Unlike S3-full's chord, the bypass does not need the center bay opened,
+since Seyedi Blvd already crosses at grade. The third idea (opening the
+center bay for light-vehicle movements) conceptually overlaps with S3-full
+and was not built. All three built variants perform worse than S0, but at
 very different severity: metering improves on the bare S3-constrained ring
-at peak demand; the bypass, even after its documented geometric conflict
-was fixed in this session, remains fragile at peak demand (see Section 7
-for the full analysis). See `scenarios/S5_hybrid/README.md`.
+at peak demand; the bypass, under **both** priority designs tested (even
+after its documented geometric conflict was fixed), remains either fragile
+or uniformly weak at peak demand — not because of resistance to fixing, but
+because the conflict point itself is the problem, not its priority design
+(see Section 7 for the full analysis). See `scenarios/S5_hybrid/README.md`.
 
 ## 5. Results: All 6 Built Scenarios
 
@@ -408,7 +420,8 @@ for the full analysis). See `scenarios/S5_hybrid/README.md`.
 #| echo: false
 SCEN_LABELS = [("s0", "S0"), ("s1_fixed", "S1-fixed"), ("s1_actuated", "S1-actuated"),
                ("s2", "S2 (D=250m)"), ("s3_constrained", "S3-constrained"), ("s3_full", "S3-full"),
-               ("s4", "S4"), ("s5_metering", "S5-metering"), ("s5_oneway", "S5-bypass")]
+               ("s4", "S4"), ("s5_metering", "S5-metering"), ("s5_oneway", "S5-bypass (unconditional)"),
+               ("s5_oneway_yield", "S5-bypass (yielding)")]
 ```
 
 ### 5.1 Delay (time loss)
@@ -490,7 +503,8 @@ Markdown(dfc.to_markdown())
 dfstat = pd.read_csv("../outputs/tables/scenario_comparison.csv")
 scen_map = {"s1_fixed": "S1-fixed", "s1_actuated": "S1-actuated",
             "s2": "S2", "s3_constrained": "S3-constrained", "s3_full": "S3-full", "s4": "S4",
-            "s5_metering": "S5-metering", "s5_oneway": "S5-bypass"}
+            "s5_metering": "S5-metering", "s5_oneway": "S5-bypass (unconditional)",
+            "s5_oneway_yield": "S5-bypass (yielding)"}
 key = dfstat[(dfstat["metric"] == "mean_timeloss_s") &
              (dfstat["scenario"].isin(scen_map.keys()))][
     ["scenario", "lambda", "pct_diff", "p_value", "cohens_dz"]
@@ -503,7 +517,7 @@ Markdown(key.round(3).to_markdown(index=False))
 ```{python}
 #| label: tbl-stats-collision
 #| tbl-cap: "Paired comparison of S2/S3/S4/S5 against S0 — collision count and max queue length"
-collision_scens = ["s2", "s3_constrained", "s3_full", "s4", "s5_metering", "s5_oneway"]
+collision_scens = ["s2", "s3_constrained", "s3_full", "s4", "s5_metering", "s5_oneway", "s5_oneway_yield"]
 key2 = dfstat[(dfstat["metric"].isin(["n_collisions", "max_queue_length_m"])) &
               (dfstat["scenario"].isin(collision_scens))][
     ["scenario", "lambda", "metric", "pct_diff", "p_value"]
@@ -684,30 +698,57 @@ seed (its tail risk).
 was applied exactly per netconvert's own diagnostic and fully resolved its
 documented warning; this shows **that specific warning was a symptom of a
 real but secondary geometric issue, not the primary driver of the bypass's
-poor performance.** The primary driver remains mechanism 2 above: granting
-unconditional priority (edge priority 80, higher than the ring) to a
-fast through-movement across an already-congested junction, once it
-interacts with this study's uncalibrated aggressive behavioral parameters,
-is prone to a bistable collapse pattern — most seeds settle into a bad but
-stable state, and occasionally (here, 1 in 10) the system cascades into a
-fully uncontrolled collision chain. **This tail risk, not just a bad mean,
-is itself a separate and important safety finding** — and a concrete
-illustration of the exact statistical limitation Section 11 already flags
-about collision-count confidence intervals with a 10-seed sample. A real
-fix likely requires active control on the bypass itself (a signal or a
-clearer right-of-way rule) or full grade separation, not merely a junction
-radius adjustment — see Section 12.
+poor performance.** The initial hypothesis was that the primary driver was
+mechanism 2 above: granting unconditional priority (edge priority 80,
+`pass="true"`, higher than the ring) to a fast through-movement across an
+already-congested junction, once it interacts with this study's
+uncalibrated aggressive behavioral parameters, is prone to a bistable
+collapse pattern — most seeds settle into a bad but stable state, and
+occasionally (here, 1 in 10) the system cascades into a fully uncontrolled
+collision chain.
+
+**A direct test of the hypothesis (Section 12, this session continued):**
+if the root cause really is "unconditional priority," removing it should
+help. To test this, `oneway_yield` was built: the identical bypass
+topology, but the edge priority was lowered from 80 to **30** (below the
+ring's 50) and `pass="true"` was removed — the bypass now has to find a
+gap like any other normal priority-junction connection in this network
+(exactly like S0/S4). **The result was the opposite of the hypothesis:**
+instead of improving, collision count at lambda=1.4 rose to 1,526.5 per
+run (higher than either prior design) — and this time it was not a rare
+tail collapse but a **uniformly bad outcome across all 10 seeds** (ranging
+428-4,498 collisions), now cleanly statistically significant (p=0.017
+delay, p=0.010 collisions, at every lambda level). Removing unconditional
+priority turned a rare, catastrophic collapse into a chronic, predictable
+weakness — not better, just **differently** bad. A plausible mechanism: forcing
+the bypass to negotiate right-of-way on every pass (instead of guaranteed
+through movement) itself creates a new sudden stop/slowdown point that, with
+this study's short follower time gap and aggressive right-of-way disregard,
+turns into collisions — essentially S1's own queuing mechanism (mechanism
+2), recurring at a different location. **A stronger conclusion than
+before:** neither unconditional priority nor normal yielding priority makes
+this bypass acceptable; the mere existence of this added conflict point,
+regardless of its priority design, is the problem. **This tail risk /
+chronic weakness finding is itself a separate and important safety
+result** — and a concrete illustration of the exact statistical limitation
+Section 11 already flags about collision-count confidence intervals with a
+10-seed sample. A real fix likely requires an actual traffic signal on the
+bypass (like S1, with the same behavioral-calibration caveats) or full
+grade separation — not any further priority/right-of-way adjustment — see
+Section 12.
 
 **Summary for S5:** metering — which adds complementary control to an
 existing geometric conflict — performs better than the raw ring and is
 also more robust (lower tail risk). The bypass — which adds a new
-geometric conflict with no active control — retains both a bad mean and
-high tail risk even after its specific geometric warning was documented,
-targeted, and successfully resolved. This pattern is fully consistent with
-mechanisms 1 and 2 above and confirms them at the level of scenario design,
-not just S1's single-node design: **complementary control on an existing
-conflict helps; a new conflict with no active control does not help, even
-with "clean" geometry.**
+geometric conflict with no active control — retained a bad mean and a
+safety problem (as either tail risk or chronic weakness) under **both**
+priority designs tested, even after its specific geometric warning was
+documented, targeted, and successfully resolved. This pattern is fully
+consistent with mechanisms 1 and 2 above and confirms them at the level of
+scenario design, not just S1's single-node design: **complementary control
+on an existing conflict helps; a new conflict with no active control does
+not help, regardless of its priority design or how "clean" its geometry
+is.**
 
 **What this means for the report:** the "S1 worse than S0" finding should
 not be read as a definitive verdict on the real-world value of traffic
@@ -735,7 +776,7 @@ conceptual/without data.
 | **S2 — left-turn removal + real U-turn** | Not significantly different from S0 in delay at lambda=0.8 and 1.4 (peak demand); directionally better collisions/queue at high lambda; no active control (no S1-style queuing risk); negligible sensitivity to U-turn distance (150/250/350 m) | Slightly (7-12%) higher delay than S0 at lambda=0.6, 1.0 and 1.2 — the real cost of the U-turn detour, unlike the optimistic first cut, is now in the model and tempers the benefit | A more precise geometric version (real curvature, adequate acceleration length) could reduce the fixed cost | Real left-turn count data (not the 15% assumption) could shift this finding in either direction |
 | **S3 — asymmetric roundabout (constrained/full)** | Gap versus S0 shrinks and becomes non-significant as demand rises (the conventional roundabout pattern); the `full` variant (open center bay) is slightly better than `constrained` at mid/high delay | Significantly worse than S0 at low/mid demand (lambda <= 1.0); more collisions in both variants (directional, likely largely an artifact of this version's simple single-lane, non-engineered ring geometry); the `full` option is conditional on a structural sign-off outside this study's scope | Precise geometric design (real radius/deflection/island) could meaningfully improve the result; if structurally approved, the center bay gives a real benefit | Without better geometric design, this version's safety risk could recur in the real world; delay in structural approval keeps the `full` option effectively unimplementable |
 | **S4 — channelization** | Lowest-cost/lowest-risk intervention; no new junction node or structural sign-off needed; no statistically significant difference from S0 on any metric (neither better nor worse, at all 5 lambda levels) | No measurable improvement in this implementation; alone, does not remove the informal left turn | Could be a fast/low-risk intermediate step, or combine with S2 (which removes the left-turn conflict) for a cumulative effect — see next steps | May only mask symptoms rather than the root cause (no formal right-of-way for left turns) |
-| **S5 — hybrid (metering/bypass)** | Metering genuinely improves on the bare S3-constrained ring at lambda=1.4 (max queue 106 m vs. 147 m) and is more robust (worst single seed only 44 s / 483 collisions); its 20 s cycle was empirically checked, not just assumed; both variants share the ring infrastructure from S3 | The bypass showed no reliable improvement even after its documented geometric conflict was fully and successfully resolved (the netconvert warning is gone); at lambda=1.4 mean delay actually got worse (61.7 s), with a serious tail risk — 1 of 10 seeds collapsed completely (6,009 collisions in one run); neither variant yet reaches S0's level | Metering could move closer to S0 with behavioral calibration; the bypass showed that a purely geometric fix is not enough — active control on the bypass itself (a signal or grade separation) is the real next step | Without active control, the bypass could reproduce exactly this same rare-but-catastrophic tail risk in the real world — more dangerous than a predictable bad average |
+| **S5 — hybrid (metering/bypass)** | Metering genuinely improves on the bare S3-constrained ring at lambda=1.4 (max queue 106 m vs. 147 m) and is more robust (worst single seed only 44 s / 483 collisions); its 20 s cycle was empirically checked, not just assumed; all three built variants share the ring infrastructure from S3 | The bypass failed under **both** priority designs tested: unconditional (priority 80) still had a severe tail risk even after its documented geometric conflict was fully resolved (1 of 10 seeds collapsed completely, 6,009 collisions in one run); yielding (priority 30, built specifically to fix that risk) turned it into a uniform, statistically significant weakness across all 10 seeds instead (lambda=1.4: 1,526.5 collisions/run) — worse, not better; neither variant yet reaches S0's level | Metering could move closer to S0 with behavioral calibration; for the bypass, two rejected fixes show the real next step is active control with an actual signal (not another priority adjustment) or grade separation | Without active control, the bypass could reproduce in the real world either a rare-but-catastrophic collapse (unconditional priority) or chronic congestion (yielding priority) — no simple priority scheme makes this location safe |
 
 ## 9. Preliminary Conclusions and Ranking
 
@@ -778,20 +819,26 @@ weight on behavior at peak demand lambda=1.4):
    deflection) most likely represent something close to the worst case for
    these concepts; no definitive judgment about the real value of "a
    roundabout" or "a roundabout + metering" can be drawn from this data.
-4. **S1 (signal, both modes) and S5-bypass, as currently implemented — not
-   recommended.** Section 6's diagnostic showed S1 would remain worse than
-   S0 even under hypothetically calibrated behavior (the primary delay
-   mechanism is the signal design, not behavior); the actuated variant is
-   clearly preferable to fixed-time. **S5-bypass**, even after its
-   documented geometric conflict was fully and successfully resolved in
-   this session (the netconvert warning is gone), showed no reliable
-   improvement: at lambda=1.4 mean delay actually got worse (61.7 s,
-   +126%), with a troubling tail risk — 9 of 10 seeds cluster around ~42 s,
-   but one seed collapses completely (242 s, 6,009 collisions in a single
-   run), a scale that exceeds even **S1-fixed's own worst case** (56.0 s,
-   1,256 collisions/run). This shows a purely geometric fix was not enough
-   for this scenario; the root cause is the same behavioral mechanism
-   shared with S1 — see Section 7 (mechanism 5) for the full analysis.
+4. **S1 (signal, both modes) and S5-bypass (both priority designs), as
+   currently implemented — not recommended.** Section 6's diagnostic showed
+   S1 would remain worse than S0 even under hypothetically calibrated
+   behavior (the primary delay mechanism is the signal design, not
+   behavior); the actuated variant is clearly preferable to fixed-time.
+   **S5-bypass** was tested twice and failed both times: with unconditional
+   priority, even after its documented geometric conflict was fully and
+   successfully resolved (the netconvert warning is gone), it showed a
+   severe tail risk — 9 of 10 seeds cluster around ~42 s, but one seed
+   collapses completely (242 s, 6,009 collisions in a single run), a scale
+   that exceeds even **S1-fixed's own worst case** (56.0 s, 1,256
+   collisions/run). With normal yielding priority (lower than the ring, no
+   unconditional right-of-way — a direct test of the hypothesis that
+   removing unconditional priority would help), the result reversed:
+   collisions at lambda=1.4 rose to 1,526.5 per run, this time uniformly
+   across all 10 seeds rather than a rare collapse, and cleanly
+   statistically significant. This shows neither a purely geometric fix nor
+   a priority-design change is enough for this scenario; the root cause is
+   the same behavioral mechanism shared with S1 — see Section 7 (mechanism
+   5) for the full analysis.
 
 **Process recommendation:** S4 (low-risk, no negative effect) and S2
 (promising at peak demand) are the natural candidates for the next
@@ -842,18 +889,22 @@ performed on a held-out period (e.g., a different day's peak).
   `scenarios/S3_roundabout/README.md`) showed adding a lane *increases*
   collisions rather than reducing them — a finding future, more precise
   geometric design should take into account.
-- **S5 (both options) remains a first-cut/exploratory version, though
-  revised:** the `metering` signal's 20 s cycle was confirmed with a light
-  empirical sweep (3 seeds, not a formal optimization method). The
-  `oneway_priority` bypass's documented geometric conflict (a netconvert
-  "intersecting left turns" warning) was fully resolved in this session —
-  but that fix produced no reliable improvement in simulated performance;
-  mean delay at peak demand got worse, and a serious tail risk (1 seed in
-  10 collapsing completely) remains. This shows the bypass's problem is
-  mostly behavioral (interaction between an unconditional-priority
-  connection and the study's aggressive behavior parameters), not simply
-  the geometry that has now been fixed; active control on the bypass or
-  full grade separation have not yet been tested.
+- **S5 remains a first-cut/exploratory scenario, though revised twice:**
+  the `metering` signal's 20 s cycle was confirmed with a light empirical
+  sweep (3 seeds, not a formal optimization method). The bypass was tested
+  under two priority designs, both rejected: `oneway_priority`'s documented
+  geometric conflict (a netconvert "intersecting left turns" warning) was
+  fully resolved, but that fix produced no reliable improvement — mean
+  delay at peak demand got worse, and a serious tail risk (1 seed in 10
+  collapsing completely) remained. `oneway_yield`, built specifically to
+  test whether removing that unconditional priority would help, instead
+  made things worse — the rare collapse became a uniform, statistically
+  significant weakness across all 10 seeds. This shows the bypass's problem
+  is not the geometry (now fixed) or the specific priority scheme (both
+  ends of the spectrum tested), but the mere presence of this added
+  conflict point interacting with the study's aggressive behavior
+  parameters; an actual traffic signal or full grade separation have not
+  yet been tested.
 - **S2 now accounts for the real cost of the U-turn detour** (fixing the
   previous version of this report's limitation), but it is still an
   approximation: the share of traffic routed to the U-turn (15%) comes from
@@ -883,15 +934,17 @@ performed on a held-out period (e.g., a different day's peak).
 
 ## 12. Next Steps (Phase 4, continued)
 
-1. **Active control or grade separation for the S5 bypass** — a purely
-   geometric fix (the junction radius, this session) resolved netconvert's
-   warning but produced no real improvement and did not remove the tail
-   risk (1 of 10 seeds collapsing completely); the real next step is not
-   another geometric tweak but active control on the bypass itself (e.g. a
-   stop sign/signal, or a clearer right-of-way rule instead of the current
-   unconditional priority) or full grade separation — now the top priority
-   on this list, since Section 7 showed the root cause is behavioral, not
-   geometric.
+1. **An actual traffic signal or grade separation for the S5 bypass** — two
+   prior attempts, both this session, have been ruled out: a purely
+   geometric fix (the junction radius) resolved netconvert's warning but
+   produced no real improvement; lowering the bypass to normal yielding
+   priority (`oneway_yield`) did not help either — it turned the rare tail
+   collapse into a uniform, statistically significant weakness (Section 7,
+   mechanism 5). The reasonable range of priority/geometry adjustments for
+   this location has now been tried and rejected; the real next step is not
+   another priority tweak but an actual signal on the bypass itself (like
+   S1, with its cycle timed, and the same behavioral-calibration caveats)
+   or full grade separation — still the top priority on this list.
 2. **More precise S3 geometric design:** replace the current single-lane
    arc ring with a real roundabout (engineered radius/deflection/splitter
    island) — S3's current result is still likely more pessimistic than a
