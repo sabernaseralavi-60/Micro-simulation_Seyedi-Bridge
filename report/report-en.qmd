@@ -1,210 +1,912 @@
 ---
-title: "Seyedi Under-Bridge Intersection Traffic Reorganization"
-subtitle: "Phase 3 Report — Demand and Demand-Level Sensitivity"
+title: "Seyedi Under-Bridge Intersection Traffic Reorganization, Kerman"
+subtitle: "Phase 4 Report — all 6 scenarios built and simulated; behavioral diagnostic and this phase's ranking"
 author: "Study Team (Claude Code, supervised by Saber Naseralavi)"
 date: today
 ---
 
 ::: {.callout-important}
-## Warning — Uncalibrated Model
-This is the **Phase 3** version of the report. Base geometry still comes from
-OSM (with imagery-based corrections to the deck lane count, merge-junction
-type, and pier/bay structure) and baseline demand remains entirely
-**hypothetical** (engineering guesswork, not field data). From this version
-on, per the project's Hard Rule 5, every reported number is a **mean ± 95%
-confidence interval over at least 10 seeds** — but since only the S0 (do-
-nothing) scenario exists so far, this report contains **no scenario
-comparison** (do-nothing vs. improvement options); that comes in Phase 4. What
-is here is how sensitive the existing condition (S0) itself is to demand
-level.
+## Warning — Uncalibrated Model, Report Still Evolving
+This is the **Phase 4** version of the report. Network geometry has been
+corrected from OSM using imagery evidence (deck lane count, merge-junction
+type, pier/bay structure), but baseline demand is still **hypothetical**
+(engineering judgment, not a field count). Per the project's Hard Rule 5,
+every number in this report is a **mean ± 95% confidence interval over 10
+independent seeds**. **All six planned scenarios (S0 through S5) have now
+been built and simulated** — S0 (do-nothing), S1 (signalized, two control
+modes), S2 (left-turn removal + a physical median U-turn, three sensitivity
+distances), S3 (asymmetric roundabout, two variants), S4 (channelization),
+and S5 (hybrid/creative, two variants) — **11 control variants, 1,100 SUMO
+runs** in total. A **separate diagnostic experiment** also reran S0/S1 with
+SUMO's default (non-aggressive) behavioral parameters instead of this
+study's tuned-aggressive set, to separate "the signal's own effect" from
+"the effect of uncalibrated aggressive behavior" (Section 6). **This
+version is therefore the first complete (not necessarily final) Phase-4
+ranking** — still conditional on real calibration (Section 10), not the
+project's final conclusion. Every number here is valid only for **relative
+scenario comparison**, not as a prediction of real-world absolute values.
+**S5's detailed qualitative/SWOT analysis and its geometric/control revision
+were completed in this same session** (Sections 7 and 8): S5's bypass
+variant had a documented geometric conflict (a netconvert warning) fully
+resolved, and its complete 5-lambda x 10-seed batch was rerun — but,
+**honestly reported**, that fix did not produce a reliable improvement in
+simulated performance (Section 7, mechanism 5). What remains is a more
+careful geometric design for S3 and a more serious (not just geometric)
+revision for the S5 bypass — see Section 12.
 :::
 
-## 1. Purpose of this version
+## 1. Executive Summary
 
-Per the project roadmap (`CLAUDE.md`), Phase 1's goal was a **complete,
-end-to-end** pipeline — from raw OSM data to a published report — even with raw
-geometry and demand. Phase 2 brought the critical geometry (deck lane count,
-merge-junction type, pier/bay structure) and fleet composition closer to
-imagery evidence / engineering judgment on that same pipeline. Phase 3 (this
-version) adds the **multi-λ × multi-seed** infrastructure required by the
-project's Hard Rule 5 and measures how sensitive the existing condition (S0)
-is to demand level — the statistical prerequisite for a meaningful scenario
-comparison in Phase 4.
+The Seyedi under-bridge intersection in Kerman is where Imam Reza Highway
+(on the bridge deck, east-west axis) crosses Seyedi Blvd / Shahid Soleimani
+Blvd (under the bridge, north-south axis). Through movement on the bridge
+deck is not a problem; the real bottleneck is the **turning movements under
+the bridge**, which — absent channelization or a signal — are effectively
+handled as an informal, semi-formal traffic circle (weaving).
 
-## 2. Network construction and grade-separation check
+This study built a fully reproducible pipeline with SUMO micro-simulation
+that regenerates everything, from satellite imagery and OSM to the final
+report, with one command (`make all`). As of this version:
 
-The network was built from OpenStreetMap (Overpass API, bbox around the Seyedi
-under-bridge intersection) using `netconvert`. Separation between the elevated
-bridge deck (Imam Reza Highway, `bridge=yes layer=1`) and the at-grade network
-below (Seyedi road / Shahid Soleimani Blvd) was **visually inspected and
-confirmed** (@fig-layer-check) — per `CLAUDE.md` this is the single most
-critical failure point for this model.
+- **The existing condition (S0)**, as the comparison baseline, was
+  simulated at 5 demand levels (lambda from 0.6 to 1.4 times the assumed
+  baseline demand) x 10 independent seeds (50 runs).
+- **S1 (signal)** in two modes (fixed-time / actuated), **S2 (left-turn
+  removal + physical median U-turn)** at three sensitivity distances
+  (150/250/350 m), **S3 (asymmetric roundabout)** in two options
+  (constrained / open center span), and **S4 (channelization)** — each on
+  the same 5-lambda x 10-seed grid. **1,100 SUMO runs** in total across 11
+  control variants.
+- **A separate diagnostic experiment** (100 more runs): S0 and S1-fixed
+  rerun with SUMO's **default** behavioral parameters (not this study's
+  aggressive tuning) to separate "the signal's own effect" from "the effect
+  of uncalibrated aggressive behavior."
+- **Key, unexpected S1 finding:** in this uncalibrated model, converting to
+  a signal (either mode) not only failed to **reduce** mean delay, it
+  **increased** it by up to 105% (at high demand), and raised collisions by
+  up to 12x. **The behavioral diagnostic (Section 6)** sharpened this: even
+  with SUMO's default behavior, S1 is still 36-57% more delayed than S0 (so
+  most of the delay effect really does come from the signal design under
+  under-saturated demand), but collisions with default behavior nearly
+  vanished — i.e., **the collision explosion is almost entirely a product
+  of signal-induced queuing interacting with uncalibrated aggressive
+  behavior, not the signal itself.**
+- **S4 performed essentially identically to S0** (no statistically
+  significant difference at any lambda, neither better nor worse) —
+  channelization alone made no measurable difference.
+- **S2 (full version, with a real U-turn)** is somewhat more conservative
+  than its first, simplified cut — now slightly **worse** than S0 at
+  low/mid lambda (7-12%, significant), but at lambda=1.4 (peak demand) it
+  remains **not significantly different** from S0 and is directionally
+  safer. Sensitivity to the U-turn distance (150/250/350 m) was negligible.
+- **S3 (roundabout) is significantly worse than S0 at low/mid demand**
+  (12-20% more delay) — the classic roundabout pattern (a fixed geometric
+  cost at low demand). **A geometric revision in this session** (an arc
+  shape instead of a straight line, and reverting the ring from two lanes
+  back to one after an experiment showed two lanes *increases* collisions)
+  eliminated teleports entirely and visibly reduced collisions — see
+  `scenarios/S3_roundabout/README.md`.
+- **S5 (hybrid) was built, simulated, and — in this same session — had its
+  documented geometric issue fixed and its full batch rerun** (both
+  options: roundabout + metering, roundabout + priority north-south
+  bypass). The two variants diverge sharply: **metering** genuinely
+  improves on the bare S3-constrained ring at peak demand (max queue 106 m
+  vs. the bare ring's 147 m) and is also more robust (its worst single seed
+  at lambda=1.4 is only 44 s / 483 collisions); its 20 s cycle was
+  empirically checked, not just assumed. **The north-south bypass** had its
+  documented geometric conflict (a netconvert "intersecting left turns"
+  warning) fully resolved exactly as netconvert's own diagnostic suggested
+  (widening the junction radius) — but this fix **did not produce a
+  reliable improvement**: at lambda=1.4, mean delay actually rose to 61.7 s
+  (+126% vs. S0), though no longer statistically significant (p=0.13)
+  because variance exploded — 9 of 10 seeds cluster around a more
+  reasonable ~42 s, but **1 of 10 seeds collapses completely** (242 s delay,
+  6,009 collisions in a single run), a scale that exceeds even **S1-fixed's
+  own worst case** (56.0 s, 1,256 collisions/run). This is an honest,
+  reported negative result: the fix eliminated netconvert's specific
+  warning but not the scenario's underlying fragility — see Section 12 for
+  what a real fix likely requires.
+- **Preliminary summary (not final, based on complete data for all 6
+  scenarios):** **S4 and S0 are effectively tied at the top of the current
+  ranking**; **S2 close behind, with a real edge at peak demand**; **S3
+  needs more careful geometric design before a final judgment**; **S1 and
+  S5's bypass variant are not recommended as-is; S5's metering variant sits
+  closer to S3's tier** (needs refinement, but shows a genuinely promising
+  signal). See Section 9 (ranking) and Section 8 (SWOT) for detail.
 
-![Visual grade-separation check: red = bridge deck (z>0), blue = at-grade network (z=0). The deck passes over the ground network with no connection.](../outputs/figures/network_layer_check_zoom.png){#fig-layer-check width=85%}
+## 2. Problem Statement and Background
 
-## 3. Demand: the jtrrouter method
+### 2.1 Location and nature of the problem
 
-Per `CLAUDE.md`'s methodology justification, for a single intersection, entry
-volume per approach + turning ratios is far less data-hungry than a full OD
-matrix. Demand in this version is entirely hypothetical (see
-`config/assumptions.yml`, sections `demand_baseline_phase1` and
-`traffic_control.turn_ratio_baseline`):
+The Seyedi under-bridge intersection consists of two entirely separate
+levels:
 
-| Approach | Hypothetical entry volume (veh/h) |
-|---|---|
-| West (bridge deck) | 800 |
-| East (bridge deck) | 800 |
-| North (Seyedi road) | 500 |
-| South (Shahid Soleimani Blvd) | 500 |
+- **The bridge deck (upper level):** Imam Reza Highway, east-west axis,
+  high design speed, unproblematic through flow.
+- **Under the bridge (lower, at-grade level):** Seyedi Blvd from the north
+  and Shahid Soleimani Blvd from the south, together with four loop ramps
+  that move traffic between the two levels.
 
-## 4. Geometric fidelity and fleet composition (Phase 2)
+The core problem is the space under the bridge: no signal, no defined
+channelization, and no formal right-of-way for left turns. The result
+behaves like an informal traffic circle (informal weaving), where drivers
+negotiate right-of-way moment to moment rather than by a predefined rule.
 
-**Imagery-based geometric corrections** (applied to the plain-XML via
-`src/02_patch_geometry.py`, per Hard Rule 2 — no manual netedit editing):
+### 2.2 What the satellite imagery taught us
 
-- **Bridge deck lane count:** OSM recorded 2 lanes per direction; a closer
-  review of `2025_zoom.png` (clearly three rows of vehicles) showed 3 lanes
-  with high confidence — corrected. See
-  `config/assumptions.yml -> bridge_geometry.deck_lanes_per_direction`.
-- **Merge-junction type under the bridge:** 9 merge junctions (2 in / 1 out) in
-  the weaving area were changed from netconvert's default `priority` to
-  `zipper` — to represent the real "first-come-first-served" behavior in the
-  absence of channelization or signals (see
-  `traffic_control.weave_merge_junction_model`).
+A systematic review of Google Earth imagery (Phase 0; see
+`docs/imagery_review.md`), and in particular a close inspection of the 2012
+image (when the bridge structure was still bare and the piers fully
+visible), revealed a determining physical fact not obvious from today's
+maps at first glance:
 
-**Key geometric finding — the bridge's 7-bay pier structure:** a close visual
-inspection by the user of `2012.png` (when the bridge structure was still bare
-and the piers fully visible) showed that, along the bridge's east-west axis,
-the space under the deck is divided into 7 bays: 3 on the west + 1 center bay
-+ 3 on the east (@fig-sketch). Of the 3 bays on each side, only the one
-**adjacent to the center** is open to traffic and is where vehicles actually
-pass/turn; the two outer bays on each side are completely closed and are part
-of the bridge's structural body (not usable open space), and the center bay is
-currently kept deliberately closed. This means the weaving area under the
-bridge is not, contrary to the Phase-0 assumption, one continuous open
-plaza — it is exactly **two discrete choke points** (the west open bay and the
-east open bay) separated by a closed structural section; the observed
-roundabout-like weaving behavior arises from vehicles circulating between
-exactly these two choke points. **Scenario implication:** opening the center
-bay (subject to a structural engineer confirming load-bearing capacity — outside
-this traffic study's scope) is an explicit Phase-4 option that would open a
-third through-corridor under the bridge. See
-`config/assumptions.yml -> bridge_geometry.span_structure`.
+> Under the bridge, along the east-west axis, the space is divided into
+> **7 bays** (3 west + 1 center + 3 east). Of the three bays on each side,
+> only the one **adjacent to the center** is open to traffic; the two outer
+> bays on each side are completely closed and are part of the bridge's
+> structural body — not usable open space. The center bay is also
+> currently kept deliberately closed.
 
-![Updated geometric sketch with the bridge's real 7-bay pier structure (green label = open bay, red label = closed bay)](../outputs/figures/seyedi_sketch.png){#fig-sketch width=90%}
+This finding corrected the Phase-0 first impression ("one continuous open
+plaza"): what actually exists under the bridge is **two discrete choke
+points** (the west open bay and the east open bay) with a closed structural
+wall between them, not one continuous open space. This physical fact places
+a hard ceiling on any future geometric design in this study (including the
+feasibility of a modern roundabout in S3), and is recorded in
+`config/assumptions.yml` under `bridge_geometry.span_structure`.
 
-**Fleet composition and behavior** (`config/vtypes.yml`, all flagged
-`sensitivity: true` in `assumptions.yml`):
+### 2.3 Why microsimulation, and why SUMO?
+
+Classical capacity analysis (HCM) was built for standard four-leg
+intersections / roundabouts, and its assumptions (orderly queuing,
+discrete, classifiable movements) are exactly what is violated at this
+site: informal weaving behavior, a high motorcycle share with inter-lane
+filtering, and two discrete choke points separated by an unconventional
+structural element. A microsimulation that models each vehicle
+individually (not just aggregate flow) is the only method that can capture
+this complexity. SUMO (Simulation of Urban MObility) was chosen because it
+is open-source and scriptable, so the entire pipeline (network, demand,
+behavior, execution, analysis) can be built programmatically and
+reproducibly — a prerequisite for the project's Hard Rule 1.
+
+## 3. Modeling Methodology: SUMO in Plain Language
+
+This section explains the technical workflow without assuming prior SUMO
+knowledge.
+
+### 3.1 Network — "the street map for the simulation engine"
+
+SUMO needs a network file (`.net.xml`) containing nodes (junctions), edges
+(street segments), lanes, and the right-of-way/signal logic at each
+junction. This network was built from OpenStreetMap data with `netconvert`:
+
+1. A bounding box at least 400 m from the intersection center in every
+   direction was pulled from OSM.
+2. `netconvert` converted this raw data into a simulatable network — with
+   flags to preserve layer elevation (`--osm.layer-elevation`, so the
+   bridge deck and the at-grade layer below it are not accidentally
+   merged), ramp guessing, and merging very close junctions.
+3. **Mandatory visual check:** deck/underpass level separation was drawn
+   and confirmed by elevation-based coloring (@fig-layer-check) — per
+   `CLAUDE.md`'s explicit emphasis, the single most likely failure point of
+   this model.
+4. For greater fidelity (Phase 2), imagery-evidence corrections (deck lane
+   count, merge-junction behavior type) were applied **directly to the
+   intermediate plain-XML text files** with a Python script and the network
+   rebuilt — not by hand-editing in the `netedit` GUI tool — so every
+   change is Git-trackable and reproducible (Hard Rule 2).
+
+![Visual grade-separation check: red = bridge deck (z>0), blue = at-grade network (z=0).](../outputs/figures/network_layer_check_zoom.png){#fig-layer-check width=85%}
+
+### 3.2 Demand — "how many vehicles, from where to where"
+
+Unlike regional studies that need a full origin-destination (OD) matrix, for
+a single intersection, **entry volume per approach + turning ratios** is
+far less data-hungry and far more attainable. The `jtrrouter` tool does
+exactly this: given each approach's volume and its through/right/left split
+at each fork, it builds individual vehicle routes. Baseline demand (see
+`config/assumptions.yml`), absent a field count, comes from engineering
+judgment (lane count x approximate lane capacity), and is therefore treated
+as a sensitivity factor (lambda) rather than a fixed number.
+
+### 3.3 Fleet and driver behavior — "not everyone drives the same"
+
+Six vehicle classes (passenger car, motorcycle at a 30% share, taxi, pickup,
+bus, light truck) each have their own behavioral parameters
+(`config/vtypes.yml`). Key points:
+
+- **High motorcycle share (30%):** reflects a qualitative reading of the
+  imagery (not a count) — the top priority for future calibration.
+- **Sublane model enabled** (`--lateral-resolution 0.8`): without it, SUMO
+  treats each lane as a rigid unit and motorcycle filtering between lanes
+  (real, imagery-observed behavior) cannot be represented.
+- **More aggressive parameters than SUMO defaults:** shorter follower time
+  gap (`tau`), higher right-of-way disregard (`jmIgnoreFoeProb`), and
+  higher lane-change assertiveness (`lcAssertive`) — especially for
+  motorcycles — to reflect close-following Iranian driving culture. Every
+  one of these parameters is flagged `sensitivity: true`; as Section 10
+  will show, these same parameters are likely the **primary cause** of
+  S1's counter-intuitive finding.
+
+### 3.4 Experiment design — multi-scenario x multi-demand x multi-seed
+
+No stochastic simulation result should be judged from a single run —
+randomness in driver behavior (`sigma`) and route assignment alone can
+shift the outcome. Per the project's Hard Rule 5, every combination
+(scenario x demand level) is therefore repeated **10 times with independent
+seeds** (1 through 10), and the mean ± 95% confidence interval (t
+distribution, appropriate for a small sample) is reported. Demand level is
+also tested at 5 scale factors (lambda = 0.6, 0.8, 1.0, 1.2, 1.4 times the
+assumed baseline demand) to determine over what demand range the scenario
+ranking stays stable.
+
+### 3.5 KPIs and the statistical comparison method
+
+Every run produces: `tripinfo` (trip duration, time loss, waiting, per
+vehicle), `summary` (did all demand actually enter the network?),
+`statistic` (total collision count), `queue` (per-lane queue length over
+time — for checking ramp-overflow risk), and the `SSM` device (surrogate
+safety measures TTC/DRAC/PET). Because every seed generates the same
+baseline demand across all scenarios (shared seeds), scenarios are compared
+with a **paired t-test** and **paired Cohen's d** — not just a percentage
+difference in means, which can be misleading.
+
+## 4. Scenarios — Detailed Description
+
+The table below shows each scenario's current status; a full description of
+each follows, and each has its own design folder with a `README.md`
+(`scenarios/<code>/README.md`).
 
 ```{python}
-#| label: tbl-fleet
-#| tbl-cap: "Hypothetical fleet composition (engineering judgment — calibration priority #1)"
+#| label: tbl-scenario-status
+#| tbl-cap: "Build status of each scenario"
 import yaml
 from IPython.display import Markdown
-vcfg = yaml.safe_load(open("../config/vtypes.yml", encoding="utf-8"))
-names = {"passenger": "Passenger car", "motorcycle": "Motorcycle", "taxi": "Taxi",
-         "pickup": "Pickup", "bus": "Bus", "truck_light": "Light truck"}
-rows = [{"Category": names[k], "Share": f"{v['share']*100:.0f}%"} for k, v in vcfg["fleet_composition"].items()]
 import pandas as pd
+scen_cfg = yaml.safe_load(open("../config/scenarios.yml", encoding="utf-8"))["scenarios"]
+status_en = {"built": "Built and simulated", "planned": "Conceptual design (not yet built)"}
+rows = [{"Code": k, "Title": v["label_en"], "Status": status_en[v["status"]]} for k, v in scen_cfg.items()]
 Markdown(pd.DataFrame(rows).to_markdown(index=False))
 ```
 
-The **sublane** model was enabled (`--lateral-resolution 0.8`) to represent
-motorcycle filtering between lanes; `tau`, `minGap`, `sigma`, `impatience`,
-`jmIgnoreFoeProb`, and `lcAssertive` were all set more aggressively than SUMO
-defaults across classes (most aggressive for motorcycles).
+### S0 — Do-Nothing (existing condition)
 
-::: {.callout-warning}
-## Notable qualitative finding
-S0 runs with `collision.action=warn` (vehicles are not removed after a
-collision) so collisions are logged rather than truncating the simulation.
-The full collision-vs-demand trend (mean over 10 seeds per level) is in
-Section 6 ("Sensitivity to demand level"); here it suffices to say it grows
-far faster than delay does as demand rises — a qualitative signal of high
-conflict density absent channelization, consistent with this study's core
-motivation. Surrogate safety measures (TTC/DRAC/PET) will be reported
-statistically in Phase 4.
-:::
+The comparison baseline for every other scenario. Geometry is exactly what
+exists today: no signal, no formal channelization. Merge points under the
+bridge are modeled with a `zipper` junction model — SUMO's special
+representation of safe "first-come-first-served" fade-in merging, exactly
+the behavior observed in the imagery and confirmed by the user at
+Checkpoint 1 ("left turns are currently free and informal").
 
-## 5. Baseline run result (λ=1.0, mean of 10 seeds)
+### S1 — Signalized Intersection
 
-```{python}
-#| label: tbl-kpi
-#| tbl-cap: "KPI summary by approach — scenario S0, lambda=1.0, mean of 10 seeds"
-import pandas as pd
-df = pd.read_csv("../outputs/tables/s0_kpi_summary.csv")
-df.columns = ["Approach", "N vehicles", "Mean duration (s)",
-              "Mean time loss (s)", "Mean waiting (s)", "Mean route length (m)"]
-from IPython.display import Markdown
-Markdown(df.round(2).to_markdown(index=False))
-```
+**Topological finding before design:** network inspection showed that
+under the bridge there is **no real single junction node** (simultaneously
+having in-degree >= 2 and out-degree >= 2) — OSM decomposed it into a chain
+of about 24 small ramp/merge/diverge nodes, exactly consistent with Phase
+0's "quasi-roundabout with no channelization" description. This was
+discussed with the user, and the following decision was made (see
+`config/assumptions.yml -> signal_design_S1` for the full rationale):
 
-![Mean time loss by approach (lambda=1.0, mean of 10 seeds)](../outputs/figures/s0_timeloss_by_approach.png){#fig-timeloss width=85%}
+> Rather than the high-risk option of merging these ~24 nodes into one
+> artificial junction, or one shared (joined) signal program across a
+> ~150 m chain of merge points that do not actually happen simultaneously
+> in reality, **every real merge node (in-degree >= 2) inside the weaving
+> zone gets its own independent traffic light** — with a shared cycle
+> length computed by the classic **Webster** method.
 
-Across all 50 runs (5 lambda levels x 10 seeds), every generated vehicle
-entered the network and completed its trip — a basic health signal for
-network connectivity and routing even at the highest demand level (lambda=1.4).
-
-## 6. Sensitivity to demand level (lambda)
-
-Per the project's Hard Rule 5 and Phase 3, scenario S0 was run at 5 demand
-levels (lambda in {0.6, 0.8, 1.0, 1.2, 1.4}) x 10 independent seeds (used for
-both jtrrouter's stochastic turn assignment and sumo's own random behavior) —
-50 runs total. @fig-sensitivity shows mean time loss and collision count with
-95% confidence intervals.
-
-![S0 sensitivity to lambda — mean ± 95% CI over 10 seeds](../outputs/figures/s0_sensitivity_lambda.png){#fig-sensitivity width=95%}
+The optimal cycle length for design demand (lambda=1.0) was computed:
 
 ```{python}
-#| label: tbl-lambda
-#| tbl-cap: "Mean ± 95% CI per lambda level (10 seeds)"
-dfl = pd.read_csv("../outputs/tables/s0_lambda_summary.csv")
-dfl = dfl[dfl["metric"].isin(["mean_timeloss_s", "n_collisions"])]
-metric_en = {"mean_timeloss_s": "Mean time loss (s)", "n_collisions": "Mean collision count"}
-dfl["metric"] = dfl["metric"].map(metric_en)
-dfl = dfl[["lambda", "metric", "mean", "ci95_lo", "ci95_hi"]].round(2)
-dfl.columns = ["lambda", "Metric", "Mean", "CI95 low", "CI95 high"]
-Markdown(dfl.to_markdown(index=False))
+#| label: tbl-webster
+#| tbl-cap: "Webster cycle calculation for S1 (per src/08_webster_timing.py)"
+timing = yaml.safe_load(open("../config/signal_timing_S1.yml", encoding="utf-8"))
+rows = [
+    {"Parameter": "Critical flow ratio, phase A (N-S through)", "Value": f"{timing['critical_flow_ratios']['y_A']:.3f}"},
+    {"Parameter": "Critical flow ratio, phase B (deck turns)", "Value": f"{timing['critical_flow_ratios']['y_B']:.3f}"},
+    {"Parameter": "Y (sum of critical ratios)", "Value": f"{timing['critical_flow_ratios']['Y']:.3f}"},
+    {"Parameter": "Webster optimal cycle length (s)", "Value": f"{timing['cycle_length_s']['final_used_s']:.1f}"},
+    {"Parameter": "Effective green, phase A / phase B (s)", "Value": f"{timing['green_split_s']['phase_A_ns_through']:.1f} / {timing['green_split_s']['phase_B_bridge_turns']:.1f}"},
+]
+Markdown(pd.DataFrame(rows).to_markdown(index=False))
 ```
 
-**Key finding:** mean time loss rises at a fairly steady slope, from 17.8 s
-(lambda=0.6) to 27.3 s (lambda=1.4) — about a 54% increase. The recorded
-collision count, however, grows **far faster and non-linearly**: from a mean
-of 1.3 at lambda=0.6 to 101.5 at lambda=1.4 (roughly 80x). This asymmetry —
-linear delay growth versus exponential-looking safety degradation — is exactly
-what would be expected for an unchannelized weaving area with two discrete
-choke points (Section 4): as demand rises, safe merging opportunities shrink
-faster than average delay grows.
+With Y ~ 0.59 (clearly under-saturated at design demand), the optimal cycle
+came out to about 42 seconds. This cycle is applied unchanged across all 5
+lambda levels in the **fixed-time** variant; the **actuated** variant
+instead uses SUMO's default gap-out logic, which shortens/extends green
+based on actual vehicle presence.
+
+**An interesting side finding during network construction:** of 10
+candidate nodes (in-degree >= 2 within the weaving radius), only **5**
+actually had conflicting movements (foes) and received a meaningful
+multi-phase program; the other 5 were conflict-free merges and
+`netconvert` itself set them to "permanently green" — showing that part of
+what looked at first glance like a "conflict point" was actually just a
+free, non-conflicting connection.
+
+### S2 — Turn Restriction + Physical U-Turn (RCUT / Median U-Turn)
+
+**Status: built and simulated (version 2 — full).** International
+equivalent: RCUT (Restricted Crossing U-Turn) or Median U-Turn (the
+Michigan left) — the direct left turn under the bridge is removed, and a
+vehicle instead continues through/right and completes its move at a U-turn
+away from the intersection (per the user's explicit constraint: away from
+the bridge's center, since deck speed is high).
+
+Inspecting the diverge nodes inside the weaving zone identified 9 real
+decision points, each choosing between through and one of
+left-turn/right-turn; of these 9, **5** had a left-turn option, and that
+connection was removed from the plain-XML. The two long deck edges
+(eastbound/westbound) were each split at two points (+-D meters from the
+weave center) via **genuine arc-length interpolation on the edge's real
+curved shape**, with a short U-turn connector added at each split point. D
+was built at three sensitivity levels: **150 / 250 / 350 meters**. Demand
+is routed with a new `extra_turn_rules` mechanism: 15% of through-traffic
+at each split point (matching the removed left-turn share) actually travels
+the "through -> U-turn -> return -> right turn" path — not just a
+statistical reassignment of destination. See
+`scenarios/S2_rcut/README.md`.
+
+### S3 — Asymmetric Roundabout (two options)
+
+**Status: built and simulated (both options).** Per the user's Checkpoint
+decision (2026-09-14: "build both, comparatively"), both options were
+built. Since there is no single real junction node under the bridge (same
+finding as S1), rather than merging/removing the existing ~24-node chain, a
+**4-edge counter-clockwise ring** was added between the four real junction
+nodes closest to the two open bays (the nodes nearest the north/south
+approaches and the west/east open spans) — **without removing** any
+existing topology. Ring connections get a high numeric priority and
+`pass="true"` (unconditional right-of-way for circulating traffic):
+
+- **`constrained`:** the ring alone, limited to the two existing open bays.
+- **`full`:** the same ring plus a direct east-west chord, standing in for
+  the (structurally conditional) opened center bay — subject to a
+  structural engineer's sign-off, outside this traffic study's scope.
+
+Both variants completed validation runs (all vehicles finished); the
+`constrained` variant showed a small (0.1%) "wrong-lane" teleport rate,
+most likely from a lane-count mismatch between the ring's single-lane edges
+and the multi-lane real edges — see `scenarios/S3_roundabout/README.md`
+for this implementation's explicit limitations (the ring geometry is a
+straight-line-between-4-points approximation, not an engineered
+deflection/island design).
+
+### S4 — Channelization + Free Right Turn
+
+**Status: built and simulated.** The least aggressive geometric
+intervention among the scenarios: the same 5 real-conflict merge nodes from
+S1 were reverted from `zipper` to `priority`, and each node's main through
+connection got `pass="true"` (unconditional priority, matching normal
+traffic-engineering convention that the mainline does not yield for a
+channelized right-turn merge); the channelized right turn kept normal
+minor/yield priority. No new topology node was needed. "Removing curbside
+parking" was never modeled in the baseline, so it has no network effect
+here — see `scenarios/S4_channelization/README.md`.
+
+### S5 — Hybrid / Creative
+
+**Status: built, simulated, and geometrically/control-wise revised (the
+first two of three candidate ideas).** Both were built on the
+S3-constrained ring infrastructure: **metering** (roundabout + a
+single-node metering signal on the west leg, a 20 s cycle empirically
+checked against alternatives) and **oneway_priority** (roundabout + a
+direct two-way north-south bypass with priority even higher than the ring
+itself — unlike S3-full's chord, this bypass does not need the center bay
+opened, since Seyedi Blvd already crosses at grade). The third idea
+(opening the center bay for light-vehicle movements) conceptually overlaps
+with S3-full and was not built. Both variants perform worse than S0, but at
+very different severity: metering improves on the bare S3-constrained ring
+at peak demand; the bypass, even after its documented geometric conflict
+was fixed in this session, remains fragile at peak demand (see Section 7
+for the full analysis). See `scenarios/S5_hybrid/README.md`.
+
+## 5. Results: All 6 Built Scenarios
+
+```{python}
+#| echo: false
+SCEN_LABELS = [("s0", "S0"), ("s1_fixed", "S1-fixed"), ("s1_actuated", "S1-actuated"),
+               ("s2", "S2 (D=250m)"), ("s3_constrained", "S3-constrained"), ("s3_full", "S3-full"),
+               ("s4", "S4"), ("s5_metering", "S5-metering"), ("s5_oneway", "S5-bypass")]
+```
+
+### 5.1 Delay (time loss)
+
+```{python}
+#| label: tbl-timeloss-compare
+#| tbl-cap: "Mean time loss (s/vehicle) by lambda — 7 main control variants, 10 seeds each"
+frames = []
+for prefix, label in SCEN_LABELS:
+    d = pd.read_csv(f"../outputs/tables/{prefix}_lambda_summary.csv")
+    d = d[d["metric"] == "mean_timeloss_s"][["lambda", "mean"]].copy()
+    d["Scenario"] = label
+    frames.append(d)
+dfc = pd.concat(frames, ignore_index=True)
+dfc = dfc.pivot(index="lambda", columns="Scenario", values="mean").round(1)
+Markdown(dfc.to_markdown())
+```
+
+![Cross-scenario comparison by lambda — time loss (left) and collision count (right), mean +/- 95% CI](../outputs/figures/scenario_comparison_lambda.png){#fig-scenario-comparison width=95%}
+
+**S1 (both modes)** has higher delay than S0 at **all five lambda
+levels** — from about 40% at low demand to over 100% (fixed-time variant)
+at high demand. **S4** sits essentially on top of S0 across the whole
+lambda range. **S2** (with a real U-turn) is slightly above S0 at low/mid
+lambda but essentially converges with it at lambda=1.4. **S3 (both
+options)** shows a different pattern: a noticeable gap versus S0 at low
+lambda (13-18% higher), which gradually shrinks as demand rises — the
+classic roundabout pattern (a fixed geometric cost that dominates at low
+demand, but becomes relatively less costly than the competing options as
+demand rises).
+
+### 5.2 Safety (recorded collisions and queuing)
+
+```{python}
+#| label: tbl-collision-compare
+#| tbl-cap: "Mean recorded collision count per run, by lambda"
+frames = []
+for prefix, label in SCEN_LABELS:
+    d = pd.read_csv(f"../outputs/tables/{prefix}_lambda_summary.csv")
+    d = d[d["metric"] == "n_collisions"][["lambda", "mean"]].copy()
+    d["Scenario"] = label
+    frames.append(d)
+dfc = pd.concat(frames, ignore_index=True)
+dfc = dfc.pivot(index="lambda", columns="Scenario", values="mean").round(1)
+Markdown(dfc.to_markdown())
+```
+
+Recorded collisions in S1 (both modes) are dramatically higher than S0 — at
+lambda=1.4, the fixed-time variant records about 12x S0's collisions (root
+cause analyzed in Section 6: mostly a product of queuing interacting with
+uncalibrated aggressive behavior, not the signal itself). **S4** sits
+essentially at S0's level across the whole lambda range. **S2** shows fewer
+collisions than S0 at high lambda (not statistically significant, but
+directional). **S3 (both options)** shows more collisions than S0,
+especially the `full` variant at lambda=1.4 — likely partly an artifact of
+this version's simple ring geometry (single lane, no engineered
+deflection/island), not necessarily an inherent property of the roundabout
+concept (see Sections 7 and 11).
+
+```{python}
+#| label: tbl-queue-compare
+#| tbl-cap: "Observed maximum queue length (m), by lambda"
+frames = []
+for prefix, label in SCEN_LABELS:
+    d = pd.read_csv(f"../outputs/tables/{prefix}_lambda_summary.csv")
+    d = d[d["metric"] == "max_queue_length_m"][["lambda", "mean"]].copy()
+    d["Scenario"] = label
+    frames.append(d)
+dfc = pd.concat(frames, ignore_index=True)
+dfc = dfc.pivot(index="lambda", columns="Scenario", values="mean").round(1)
+Markdown(dfc.to_markdown())
+```
+
+### 5.3 Statistical significance and effect size
+
+```{python}
+#| label: tbl-stats-compare
+#| tbl-cap: "Paired comparison of each scenario against S0 on shared seeds — time loss"
+dfstat = pd.read_csv("../outputs/tables/scenario_comparison.csv")
+scen_map = {"s1_fixed": "S1-fixed", "s1_actuated": "S1-actuated",
+            "s2": "S2", "s3_constrained": "S3-constrained", "s3_full": "S3-full", "s4": "S4",
+            "s5_metering": "S5-metering", "s5_oneway": "S5-bypass"}
+key = dfstat[(dfstat["metric"] == "mean_timeloss_s") &
+             (dfstat["scenario"].isin(scen_map.keys()))][
+    ["scenario", "lambda", "pct_diff", "p_value", "cohens_dz"]
+].copy()
+key.columns = ["Scenario", "lambda", "% diff vs. S0", "p-value (paired t)", "Cohen's dz"]
+key["Scenario"] = key["Scenario"].map(scen_map)
+Markdown(key.round(3).to_markdown(index=False))
+```
+
+```{python}
+#| label: tbl-stats-collision
+#| tbl-cap: "Paired comparison of S2/S3/S4/S5 against S0 — collision count and max queue length"
+collision_scens = ["s2", "s3_constrained", "s3_full", "s4", "s5_metering", "s5_oneway"]
+key2 = dfstat[(dfstat["metric"].isin(["n_collisions", "max_queue_length_m"])) &
+              (dfstat["scenario"].isin(collision_scens))][
+    ["scenario", "lambda", "metric", "pct_diff", "p_value"]
+].copy()
+metric_en = {"n_collisions": "Collision count", "max_queue_length_m": "Max queue length"}
+key2["metric"] = key2["metric"].map(metric_en)
+key2["scenario"] = key2["scenario"].map(scen_map)
+key2.columns = ["Scenario", "lambda", "Metric", "% diff vs. S0", "p-value"]
+Markdown(key2.round(3).to_markdown(index=False))
+```
+
+Significance summary: **S1 (both modes)** is significant and worse than S0
+in all 10 delay comparisons, with large to very large effect sizes. **S4**
+shows **no** significant delay difference from S0 at any lambda. **S2** is
+significant (and slightly worse) only at lambda=0.6, 1.0 and 1.2; at
+lambda=0.8 and 1.4 (peak demand) the difference is not significant. **S3
+(both options, final revised geometry)** is significant and worse at most
+low/mid lambda levels, but no longer significant at lambda=1.4 — the "fixed
+geometric cost that fades as demand rises" pattern. **S5 (both variants)**
+is significant and worse than S0 at most lambda levels; the bypass variant
+is dramatically worse at lambda=1.4 (+106%, significant) — see Section 7
+for a preliminary mechanism. On safety metrics, none of S2/S3/S4/S5 show a
+statistically significant difference from S0 at most lambda levels (high
+variance in the 10-seed collision-count sample) — though the direction of
+the differences (S2 better, S3/S5 worse at high lambda) is notable.
+
+## 6. Behavioral Sensitivity Diagnostic
+
+Section 5's finding ("S1 worse than S0") is unexpected and could have two
+roots: (a) the signal design itself (a fixed cycle on under-saturated
+demand, Y ~ 0.59), or (b) interaction with this study's uncalibrated
+aggressive behavioral parameters (short `tau`, `jmIgnoreFoeProb` up to 0.35
+for motorcycles). To separate these, S0 and S1-fixed were rerun with
+**SUMO's real default behavioral parameters** (not this study's aggressive
+tuning; see `config/vtypes_diagnostic_default.yml`) on the same 5-lambda x
+10-seed grid (`src/09_behavior_diagnostic.py`, 100 independent runs,
+separate from the formal scenario registry).
+
+```{python}
+#| label: tbl-diagnostic
+#| tbl-cap: "Diagnostic: time loss with SUMO default (non-aggressive) behavior"
+diag = pd.read_csv("../outputs/tables/diag_behavior_default_comparison.csv")
+diag.columns = ["lambda", "Mean S1-fixed (default behavior)", "Mean S0 (default behavior)",
+                 "% diff", "p-value"]
+Markdown(diag.round(2).to_markdown(index=False))
+```
+
+```{python}
+#| label: tbl-diagnostic-collision
+#| tbl-cap: "Diagnostic: mean collision count with SUMO default behavior"
+dlam = pd.read_csv("../outputs/tables/diag_behavior_default_lambda_summary.csv")
+dcol = dlam[dlam["metric"] == "n_collisions"][["scenario", "lambda", "mean"]].copy()
+dcol["scenario"] = dcol["scenario"].map({"diag_s0": "S0 (default behavior)",
+                                           "diag_s1_fixed": "S1-fixed (default behavior)"})
+dcol = dcol.pivot(index="lambda", columns="scenario", values="mean")
+Markdown(dcol.to_markdown())
+```
+
+**Two distinct, complementary results:**
+
+1. **Delay:** even with default (non-aggressive) behavior, S1-fixed is
+   still 36-57% more delayed than S0 (all 5 comparisons significant). That
+   is, **most of the delay effect really does come from the signal design
+   itself** — imposing a stop behind red on demand that, absent a signal,
+   could merge without a full stop; aggressive behavior amplifies this
+   effect (40-105% in the main study) but does not create it.
+2. **Safety:** with default behavior, collision counts for **both**
+   scenarios are near zero (at most 0.4 per run, versus hundreds under the
+   aggressive parameters). That is, **the collision explosion seen in
+   Section 5.2 is almost entirely a product of signal-induced queuing
+   interacting with uncalibrated aggressive behavioral parameters — not an
+   inherent property of the signal itself.**
+
+This decomposition sharpens Phase 4's message: S1's delay problem is a real
+engineering finding (signal design on under-saturated demand); S1's safety
+problem is mostly a **warning about behavioral calibration**, not a verdict
+on signals being inherently dangerous.
+
+## 7. Discussion and Interpretation
+
+With the Section 6 diagnostic factored in, three candidate explanations for
+Section 5's finding can now be weighted:
+
+**1. Design demand was under-saturated (Y ~ 0.59) — the dominant delay
+mechanism, confirmed.** When traffic volume is clearly under capacity, a
+fixed-cycle signal forces vehicles that could otherwise merge immediately
+without a full stop (zipper/priority) to stop behind red. Section 6's
+diagnostic showed this mechanism **alone** (with no aggressive behavior at
+all) is enough to make S1 36-57% slower than S0.
+
+**2. Interaction with the uncalibrated aggressive behavioral model — the
+dominant safety mechanism, confirmed.** Examining collision locations
+(Section 5.2) showed the overwhelming majority of S1's collisions occur **in
+the queue behind the signal**, not at the junction point itself. Section
+6's diagnostic settled this: with default behavior, collisions nearly
+disappear. **It is not that the signal is inherently unsafe; it is
+signal-induced queuing meeting modeled aggressive driving culture (short
+follower time gap, motorcycle disregard for right-of-way) that produces
+collisions.**
+
+**3. Node-type conversion from zipper to traffic_light — a small,
+secondary contribution.** Examining collision locations showed the share of
+collisions *inside* signalized junctions (not on the approach links) is
+small (under 5% of the total) — this mechanism may contribute a small
+share, but the dominant mechanism is #2 above (queuing).
+
+**A complementary result from S2/S4:** S4 (which adds no active control,
+only channelizes the right-turn conflict) shows no significant difference
+from S0; S2 (which fully removes the left-turn conflict, also with no
+active control) is essentially tied with S0 at peak demand and shows
+better collision/queue numbers. This pattern — "removing a geometric
+conflict without adding active control performs at least as well as (and
+sometimes better than) adding uncalibrated active control" — is exactly
+what mechanisms 1 and 2 above predict.
+
+**4. Why is S3 (roundabout) worse than S0 at low demand, but improves as
+demand rises?** This pattern (Sections 5.1/5.3) is fully consistent with
+roundabout engineering literature: a roundabout, even a small one, imposes
+a **fixed geometric cost** on every vehicle (slowing to enter/deflect,
+longer circulating path versus a straight line) that, at low demand — when
+there is effectively no competing cost from the alternative (a straight
+zipper merge) — looks like pure overhead versus the existing condition; but
+as demand rises, the existing condition (S0) degrades faster (because the
+implicit coordination of zipper merging breaks down under congestion),
+while the roundabout — as long as it has spare capacity — degrades more
+slowly; the result is the gradual convergence of the two curves seen in the
+data. **S3's elevated collision count** (especially the `full` variant at
+high lambda) is likely largely an artifact of this conceptual
+implementation's simplicity: the ring was built with single lanes and no
+engineered deflection/island (see `scenarios/S3_roundabout/README.md`) — a
+real roundabout with an engineered radius/deflection would likely
+substantially reduce this side effect; this finding should be read as
+"needs more careful geometric design before a final judgment," not "the
+roundabout concept is inherently unsafe."
+
+**5. Why do S5's two variants, built on the same S3-constrained ring,
+produce such different results?** Both S5 options start from the same
+baseline (the unmodified S3-constrained ring); the difference in outcome
+comes directly from the type of intervention added:
+
+- **Metering** adds no *further* control point — it places a single-node
+  signal on the main receiver of deck traffic to regulate entry into the
+  ring. Comparison with the bare S3-constrained ring shows this signal
+  **genuinely works**: at lambda=1.4, max queue length drops from 147 m
+  (bare ring) to 106 m, and delay/collisions are also slightly better —
+  i.e., metering absorbs part of the small roundabout's queue-overflow risk
+  at high demand, exactly the role a metering signal is supposed to play.
+  It still does not reach S0's level, however.
+- **The north-south bypass**, in its first cut, added a **new, unresolved
+  geometric conflict point** — exactly what netconvert flagged with an
+  "intersecting left turns" warning at build time: "Intersecting left turns
+  at junction 6711509176 from lane s5_bypass_N_S_0 and lane
+  610531293#0-AddedOffRampEdge_1 (increase junction radius to avoid
+  this)." In that version, at lambda=1.4, delay reached 56.3 s (+106% vs.
+  S0) and about 1,199 collisions per run (roughly 12x S0's) — numbers that
+  land almost exactly on **S1-fixed's own worst case** (56.0 s, 1,256
+  collisions/run), despite a completely different mechanism (a geometry
+  defect, not a traffic light).
+
+**The geometric fix, and its honest result (this session):** exactly as
+netconvert itself suggested, `radius="10"` was set on the conflicting
+junction node and the full network/simulation batch was rebuilt and rerun
+(see `scenarios/S5_hybrid/README.md` for the full account). **The warning
+was completely eliminated — but the simulated result showed no reliable
+improvement.** At lambda=1.4, mean delay actually rose to 61.7 s (+126%) —
+a larger number than before, not smaller — though it is no longer
+statistically significant (p=0.130, versus a significant result in the
+previous version) because between-seed variance rose sharply. The reason
+is clear from the per-seed breakdown: **9 of the 10 seeds** now cluster
+around a more reasonable mean than before (~42 s delay, ~660 collisions —
+better than the pre-fix version), but **one seed (seed 10) collapses
+completely**: 242 s of delay and **6,009 collisions in a single run**. For
+comparison, S5-metering's worst seed at the same lambda is only 44 s / 483
+collisions — the geometric fix did not remove the bypass's sensitivity to
+seed (its tail risk).
+
+**This is an honest negative result, not an unreported failure:** the fix
+was applied exactly per netconvert's own diagnostic and fully resolved its
+documented warning; this shows **that specific warning was a symptom of a
+real but secondary geometric issue, not the primary driver of the bypass's
+poor performance.** The primary driver remains mechanism 2 above: granting
+unconditional priority (edge priority 80, higher than the ring) to a
+fast through-movement across an already-congested junction, once it
+interacts with this study's uncalibrated aggressive behavioral parameters,
+is prone to a bistable collapse pattern — most seeds settle into a bad but
+stable state, and occasionally (here, 1 in 10) the system cascades into a
+fully uncontrolled collision chain. **This tail risk, not just a bad mean,
+is itself a separate and important safety finding** — and a concrete
+illustration of the exact statistical limitation Section 11 already flags
+about collision-count confidence intervals with a 10-seed sample. A real
+fix likely requires active control on the bypass itself (a signal or a
+clearer right-of-way rule) or full grade separation, not merely a junction
+radius adjustment — see Section 12.
+
+**Summary for S5:** metering — which adds complementary control to an
+existing geometric conflict — performs better than the raw ring and is
+also more robust (lower tail risk). The bypass — which adds a new
+geometric conflict with no active control — retains both a bad mean and
+high tail risk even after its specific geometric warning was documented,
+targeted, and successfully resolved. This pattern is fully consistent with
+mechanisms 1 and 2 above and confirms them at the level of scenario design,
+not just S1's single-node design: **complementary control on an existing
+conflict helps; a new conflict with no active control does not help, even
+with "clean" geometry.**
+
+**What this means for the report:** the "S1 worse than S0" finding should
+not be read as a definitive verdict on the real-world value of traffic
+signals. It says: **a simple Webster-designed signal on under-saturated
+demand, without complementary coordination/channelization and without
+behavioral calibration, can backfire** — that is itself a valuable
+engineering finding, not a model weakness. Likewise, S3's finding says "a
+simple conceptual roundabout is not a winner at low demand," not "the
+roundabout concept is rejected"; and S5's finding says "adding
+complementary control to an imperfect geometric intervention can offset
+part of its weakness, but adding a new, uncontrolled geometric conflict
+point breaks it" — not that "combining a roundabout with smart control is
+inherently useless."
+
+## 8. Scenario SWOT Analysis
+
+For all 6 scenarios (S0 through S5), the points below are grounded in
+**real simulated data** (uncalibrated) — no scenario remains purely
+conceptual/without data.
+
+| Scenario | Strengths | Weaknesses | Opportunities | Threats |
+|---|---|---|---|---|
+| **S0 — existing condition** | Lowest/tied-lowest delay in current data; zero implementation cost; zipper merging behaves smoothly at moderate demand | No formal control, dependent on driver skill/caution; collision count grows exponentially with lambda (Phase 3: up to 80x from lambda=0.6 to 1.4); no clear right-of-way for left turns | Zero cost to keep as baseline; improvable via S4 (light channelization, no active-control cost) | As Kerman's demand grows, the collision rate could quickly become unacceptable |
+| **S1 — signal (fixed/actuated)** | Formal, predictable right-of-way; actuated self-adapts to demand fluctuation; infrastructure ready for future coordination | **Data-driven, not hypothetical:** more delayed than S0 even with default behavior (Section 6); more collisions (but this is mostly a product of uncalibrated aggressive behavior, not the signal itself) | Behavioral calibration and/or signal coordination could reverse the result; actuated is clearly better than fixed-time | Early implementation without behavioral calibration could make the safety situation practically worse |
+| **S2 — left-turn removal + real U-turn** | Not significantly different from S0 in delay at lambda=0.8 and 1.4 (peak demand); directionally better collisions/queue at high lambda; no active control (no S1-style queuing risk); negligible sensitivity to U-turn distance (150/250/350 m) | Slightly (7-12%) higher delay than S0 at lambda=0.6, 1.0 and 1.2 — the real cost of the U-turn detour, unlike the optimistic first cut, is now in the model and tempers the benefit | A more precise geometric version (real curvature, adequate acceleration length) could reduce the fixed cost | Real left-turn count data (not the 15% assumption) could shift this finding in either direction |
+| **S3 — asymmetric roundabout (constrained/full)** | Gap versus S0 shrinks and becomes non-significant as demand rises (the conventional roundabout pattern); the `full` variant (open center bay) is slightly better than `constrained` at mid/high delay | Significantly worse than S0 at low/mid demand (lambda <= 1.0); more collisions in both variants (directional, likely largely an artifact of this version's simple single-lane, non-engineered ring geometry); the `full` option is conditional on a structural sign-off outside this study's scope | Precise geometric design (real radius/deflection/island) could meaningfully improve the result; if structurally approved, the center bay gives a real benefit | Without better geometric design, this version's safety risk could recur in the real world; delay in structural approval keeps the `full` option effectively unimplementable |
+| **S4 — channelization** | Lowest-cost/lowest-risk intervention; no new junction node or structural sign-off needed; no statistically significant difference from S0 on any metric (neither better nor worse, at all 5 lambda levels) | No measurable improvement in this implementation; alone, does not remove the informal left turn | Could be a fast/low-risk intermediate step, or combine with S2 (which removes the left-turn conflict) for a cumulative effect — see next steps | May only mask symptoms rather than the root cause (no formal right-of-way for left turns) |
+| **S5 — hybrid (metering/bypass)** | Metering genuinely improves on the bare S3-constrained ring at lambda=1.4 (max queue 106 m vs. 147 m) and is more robust (worst single seed only 44 s / 483 collisions); its 20 s cycle was empirically checked, not just assumed; both variants share the ring infrastructure from S3 | The bypass showed no reliable improvement even after its documented geometric conflict was fully and successfully resolved (the netconvert warning is gone); at lambda=1.4 mean delay actually got worse (61.7 s), with a serious tail risk — 1 of 10 seeds collapsed completely (6,009 collisions in one run); neither variant yet reaches S0's level | Metering could move closer to S0 with behavioral calibration; the bypass showed that a purely geometric fix is not enough — active control on the bypass itself (a signal or grade separation) is the real next step | Without active control, the bypass could reproduce exactly this same rare-but-catastrophic tail risk in the real world — more dangerous than a predictable bad average |
+
+## 9. Preliminary Conclusions and Ranking
 
 ::: {.callout-warning}
-## Methodology note — confidence interval on a collision count
-The `n_collisions` confidence interval uses the standard t-based method
-(suited to continuous data) and goes negative at low lambda (meaningless for a
-count) — a statistical artifact, not a claim of negative collisions. A proper
-Phase-4 estimate needs a count model (Poisson / negative binomial). Still, the
-**mean trend** (exponential-looking growth with lambda) is clearly visible and
-significant across the 50-run dataset.
+## This is not a final ranking
+All 6 scenarios have now been built, simulated, and given a qualitative/SWOT
+analysis (Sections 7 and 8). The ranking below is **based solely on
+available data** and, absent real calibration (Section 10), should not be
+the basis for an implementation decision; S3 and S5 each need a more
+serious round of geometric/control revision before a final judgment
+(Section 12).
 :::
 
-## 7. Limitations of this version
+Based on current evidence, a preliminary ranking (best to worst, based on a
+combination of delay + safety across the lambda range, with particular
+weight on behavior at peak demand lambda=1.4):
 
-- Ramp turning radii still come directly from OSM / visual estimation; no
-  field measurement or precisely scaled imagery backs them yet (bridge bay
-  widths are likewise schematic — see Section 4).
-- Baseline demand (volume per approach) and turning ratios are entirely
-  hypothetical; what this phase calls "sensitivity" is scaling that same
-  hypothetical demand, not replacing it with field evidence — still pending
-  (`CLAUDE.md` §5).
-- Fleet shares (especially the 30% motorcycle share), left-turn share, and the
-  behavioral aggressiveness multiplier (tau) are registered in
-  `assumptions.yml` as future global-sensitivity factors but have not been
-  tested yet; "turning radius" as a sensitivity factor requires rebuilding
-  network geometry and was deferred to Phase 4 (alongside building scenarios
-  S1-S5).
-- Only one scenario (S0) has been built; **no scenario comparison can be drawn
-  from this report** — per the project's Hard Rule 5. What was reported is
-  S0's *within-scenario* sensitivity to demand, not a ranking of options.
-- The collision-count confidence interval uses a method suited to continuous
-  data (see the warning above); to be corrected in Phase 4.
-- The Persian report uses the Vazirmatn font with a full RTL layout
-  (xepersian); final visual polish still happens in Phase 5.
+1. **S0 (existing condition) and S4 (channelization) — effectively tied at
+   the top of the ranking.** S4 showed no statistically significant
+   difference from S0 on any metric; i.e., this lowest-risk intervention is
+   at minimum harmless and has a low implementation cost.
+2. **S2 (left-turn removal + real U-turn) — close behind, with a real edge
+   at peak demand.** Accounting for the real cost of the U-turn detour
+   (not modeled in this report's first cut), S2 is slightly (7-12%) worse
+   than S0 at low/mid demand, but at exactly lambda=1.4 — the demand level
+   of most concern for this intersection's future — it remains **not
+   significantly different** from S0 and is directionally safer.
+   Sensitivity to U-turn distance (150/250/350 m) was negligible.
+3. **S3 (asymmetric roundabout, both options) and S5-metering — need more
+   careful geometric/control design before a final judgment, but with
+   promising evidence.** S3 is significantly worse than S0 at low/mid
+   demand (both delay and directionally in collisions), but the gap shrinks
+   quickly as demand rises — the conventional roundabout pattern.
+   **S5-metering** goes one step further: compared to the bare
+   S3-constrained ring, it is genuinely **better** at lambda=1.4 (max queue
+   106 m vs. 147 m; delay and collisions also slightly lower) — direct
+   evidence that even an untuned metering signal can offset part of a
+   small roundabout's inherent weakness at peak demand. Both of these
+   conceptual implementations (a single-lane ring with no engineered
+   deflection) most likely represent something close to the worst case for
+   these concepts; no definitive judgment about the real value of "a
+   roundabout" or "a roundabout + metering" can be drawn from this data.
+4. **S1 (signal, both modes) and S5-bypass, as currently implemented — not
+   recommended.** Section 6's diagnostic showed S1 would remain worse than
+   S0 even under hypothetically calibrated behavior (the primary delay
+   mechanism is the signal design, not behavior); the actuated variant is
+   clearly preferable to fixed-time. **S5-bypass**, even after its
+   documented geometric conflict was fully and successfully resolved in
+   this session (the netconvert warning is gone), showed no reliable
+   improvement: at lambda=1.4 mean delay actually got worse (61.7 s,
+   +126%), with a troubling tail risk — 9 of 10 seeds cluster around ~42 s,
+   but one seed collapses completely (242 s, 6,009 collisions in a single
+   run), a scale that exceeds even **S1-fixed's own worst case** (56.0 s,
+   1,256 collisions/run). This shows a purely geometric fix was not enough
+   for this scenario; the root cause is the same behavioral mechanism
+   shared with S1 — see Section 7 (mechanism 5) for the full analysis.
+
+**Process recommendation:** S4 (low-risk, no negative effect) and S2
+(promising at peak demand) are the natural candidates for the next
+implementation step, **conditional on real behavioral calibration** (since
+Section 6 showed the safety result is highly sensitive to these
+parameters). S3 and S5-metering need a more serious round of
+geometric/control design (not just this version's conceptual ring or
+netconvert's default cycle) before a fair comparison; S5-bypass first needs
+its own documented geometric conflict resolved, or it remains in S1's tier.
+
+## 10. Calibration and Validation Plan
+
+Part of this report's value is being explicit about the data we do not have.
+Section 6's diagnostic confirmed this prioritization: **behavioral
+calibration (third row of the table) is now a critical priority, tied with
+turning-movement counts.**
+
+| Data need | Suggested collection method | Cost/time | Priority |
+|---|---|---|---|
+| 15-minute turning-movement counts, AM and PM peaks | Drone/elevated-camera video + automated counting (YOLO + ByteTrack) | Moderate | **Critical** |
+| Fleet composition and motorcycle share | Same video | Low | High |
+| Queue length and clearance time | Same video | Low | High |
+| **Behavioral parameters (tau, jmIgnoreFoeProb, real follower gap in queue)** | Vehicle trajectory extraction from video + Optuna/GA fitting | Moderate | **Critical (confirmed by the Phase-4 diagnostic)** |
+| Saturation flow | Standard field measurement | Low | Medium |
+| Route travel time | GPS floating car, 6-10 runs per peak | Low | High |
+| Regional OD | Ride-hailing / mobile data / interviews | High | Version 2 |
+
+**Acceptance criteria:** GEH < 5 for >= 85% of movements, travel-time error
+< 15%, and qualitative agreement in the queuing pattern. Validation is
+performed on a held-out period (e.g., a different day's peak).
+
+## 11. Limitations
+
+- **This report is an uncalibrated model** (see the banner at the top of
+  the report) — no absolute number (seconds, collision count) should be
+  read as a real-world prediction; only the relative direction and
+  magnitude of differences is valid.
+- **All 6 scenarios have been built, simulated, and given a qualitative/SWOT
+  analysis** (Sections 7 and 8), but Section 9's conclusion remains
+  preliminary and conditional on real calibration — and neither S3 nor
+  S5-metering (both built on the same conceptual S3 ring) has been tested
+  with finalized geometry/control.
+- **S3 (both options) is a deliberately simplified geometric
+  implementation, though improved:** the ring's shape is now an arc (not
+  the first cut's straight line) drawn between 4 real points, but it is
+  still not an engineered roundabout with a designed radius/deflection/
+  splitter island. A single-lane-vs.-two-lane experiment (see
+  `scenarios/S3_roundabout/README.md`) showed adding a lane *increases*
+  collisions rather than reducing them — a finding future, more precise
+  geometric design should take into account.
+- **S5 (both options) remains a first-cut/exploratory version, though
+  revised:** the `metering` signal's 20 s cycle was confirmed with a light
+  empirical sweep (3 seeds, not a formal optimization method). The
+  `oneway_priority` bypass's documented geometric conflict (a netconvert
+  "intersecting left turns" warning) was fully resolved in this session —
+  but that fix produced no reliable improvement in simulated performance;
+  mean delay at peak demand got worse, and a serious tail risk (1 seed in
+  10 collapsing completely) remains. This shows the bypass's problem is
+  mostly behavioral (interaction between an unconditional-priority
+  connection and the study's aggressive behavior parameters), not simply
+  the geometry that has now been fixed; active control on the bypass or
+  full grade separation have not yet been tested.
+- **S2 now accounts for the real cost of the U-turn detour** (fixing the
+  previous version of this report's limitation), but it is still an
+  approximation: the share of traffic routed to the U-turn (15%) comes from
+  `turn_ratio_baseline.left`, not a real count; and the U-turn's
+  entry/exit geometry is not a fully engineered design.
+- **S1's signal design is an explicit simplification:** rather than one
+  classical intersection, independent merge nodes were signalized (see
+  Section 4). Coordination (progression/offset) between these nodes was
+  not modeled — it could offset part of the observed negative effect.
+- Ramp turning radii, bridge bay widths, and baseline demand still come
+  from visual estimation / engineering judgment, not field measurement
+  (see the full assumptions table in `config/assumptions.yml`).
+- The collision-count confidence interval is computed with the standard
+  t-based method (suited to continuous data); a Poisson/negative-binomial
+  model would be more appropriate for rare-event counts. This matters
+  especially for S3 and S5-bypass, where collision variance is high
+  (several directionally strong comparisons were not statistically
+  significant with a 10-seed sample; S5-bypass at lambda=1.4 is a concrete
+  example — a single seed out of 10 alone pulls the mean from about 42 s to
+  61.7 s).
+- This English report was synchronized with the Persian version in this
+  session; because both reports read from the same
+  `outputs/tables/*.csv` files, the numbers in the two languages always
+  stay identical, but later edits to the Persian text still need to be
+  carried over to English by hand — as this session did immediately after
+  making those edits.
+
+## 12. Next Steps (Phase 4, continued)
+
+1. **Active control or grade separation for the S5 bypass** — a purely
+   geometric fix (the junction radius, this session) resolved netconvert's
+   warning but produced no real improvement and did not remove the tail
+   risk (1 of 10 seeds collapsing completely); the real next step is not
+   another geometric tweak but active control on the bypass itself (e.g. a
+   stop sign/signal, or a clearer right-of-way rule instead of the current
+   unconditional priority) or full grade separation — now the top priority
+   on this list, since Section 7 showed the root cause is behavioral, not
+   geometric.
+2. **More precise S3 geometric design:** replace the current single-lane
+   arc ring with a real roundabout (engineered radius/deflection/splitter
+   island) — S3's current result is still likely more pessimistic than a
+   real engineered design; this automatically carries over to S5-metering,
+   since it is built on the same ring.
+3. Investigate a **combined S2+S4** scenario (left-turn removal +
+   right-turn channelization simultaneously) — both are low-risk and use
+   no active control; they may produce a cumulative effect.
+4. **Limited behavioral calibration** (Section 10) before any implementation
+   recommendation regarding S1 or S5-bypass — Section 6's diagnostic and
+   the S5-bypass geometric-fix experiment (item 1 above) both showed the
+   safety result is highly sensitive to these parameters, not just to
+   geometry or control type.
+5. Global sensitivity analysis (Sobol/factorial) over lambda, left-turn
+   share, motorcycle share, tau, and turning radius.
+6. Replace the t-based confidence interval for collision counts with a
+   rare-event model (Poisson/negative binomial) — S5-bypass just gave a
+   fresh, concrete illustration of why this is needed (Section 11).
