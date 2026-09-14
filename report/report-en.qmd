@@ -1,6 +1,6 @@
 ---
 title: "Seyedi Under-Bridge Intersection Traffic Reorganization, Kerman"
-subtitle: "Phase 4 Report — all 6 scenarios built and simulated; behavioral diagnostic and this phase's ranking"
+subtitle: "Phase 4 Report — all 6 scenarios plus one combined scenario built and simulated; behavioral diagnostic and this phase's ranking"
 author: "Study Team (Claude Code, supervised by Saber Naseralavi)"
 date: today
 ---
@@ -16,23 +16,27 @@ independent seeds**. **All six planned scenarios (S0 through S5) have now
 been built and simulated** — S0 (do-nothing), S1 (signalized, two control
 modes), S2 (left-turn removal + a physical median U-turn, three sensitivity
 distances), S3 (asymmetric roundabout, two variants), S4 (channelization),
-and S5 (hybrid/creative, two variants) — **11 control variants, 1,100 SUMO
-runs** in total. A **separate diagnostic experiment** also reran S0/S1 with
-SUMO's default (non-aggressive) behavioral parameters instead of this
-study's tuned-aggressive set, to separate "the signal's own effect" from
-"the effect of uncalibrated aggressive behavior" (Section 6). **This
-version is therefore the first complete (not necessarily final) Phase-4
-ranking** — still conditional on real calibration (Section 10), not the
-project's final conclusion. Every number here is valid only for **relative
-scenario comparison**, not as a prediction of real-world absolute values.
-**S5's detailed qualitative/SWOT analysis and its geometric/control revision
-were completed in this same session** (Sections 7 and 8): S5's bypass
-variant had a documented geometric conflict (a netconvert warning) fully
-resolved, and its complete 5-lambda x 10-seed batch was rerun — but,
-**honestly reported**, that fix did not produce a reliable improvement in
-simulated performance (Section 7, mechanism 5). What remains is a more
-careful geometric design for S3 and a more serious (not just geometric)
-revision for the S5 bypass — see Section 12.
+and S5 (hybrid/creative, three variants: metering plus two bypass priority
+designs) — plus a new **combined scenario (S2+S4)** — **13 control
+variants, 650 official SUMO runs** (5 lambda x 10 seeds each). A **separate
+diagnostic experiment** (100 more runs, outside the formal registry) also
+reran S0/S1 with SUMO's default (non-aggressive) behavioral parameters
+instead of this study's tuned-aggressive set, to separate "the signal's own
+effect" from "the effect of uncalibrated aggressive behavior" (Section 6).
+**This version is therefore the first complete (not necessarily final)
+Phase-4 ranking** — still conditional on real calibration (Section 10),
+not the project's final conclusion. Every number here is valid only for
+**relative scenario comparison**, not as a prediction of real-world
+absolute values. **S5's detailed qualitative/SWOT analysis and two rounds
+of geometric/control revision on its bypass were completed** (Sections 7
+and 8): both revisions were honestly **rejected** — neither produced a
+reliable improvement (Section 7, mechanism 5). By contrast, **a new
+combined scenario (S2+S4) was built and simulated**, giving this study's
+best safety result (an 80-84% collision reduction versus S0 at lambda >=
+1.0, significant) — now at the top of the preliminary ranking (Section 9).
+What remains is a more careful geometric design for S3 and genuine active
+control (not a priority/geometry adjustment) for the S5 bypass — see
+Section 12.
 :::
 
 ## 1. Executive Summary
@@ -112,11 +116,21 @@ report, with one command (`make all`). As of this version:
   cleanly significant at every lambda level (p<0.05). Neither priority
   scheme works; the conflict point itself, not its priority design, is the
   problem — see Section 12 for what a real fix likely requires.
-- **Preliminary summary (not final, based on complete data for all 6
-  scenarios and both S5-bypass revision attempts):** **S4 and S0 are
-  effectively tied at the top of the current ranking**; **S2 close behind,
-  with a real edge at peak demand**; **S3 and S5's metering variant need
-  more careful geometric/control design before a final judgment, but show a
+- **A new combined scenario, S2+S4, was built and simulated** (per
+  next-step item 3, Section 12): two independent, low-risk fixes — S2
+  (left-turn removal + U-turn) and S4 (right-turn channelization) — were
+  combined on one network with no new code, since their affected junctions
+  are entirely separate. The result is **this study's best safety finding**:
+  an 80-84% reduction in collisions versus S0 at lambda >= 1.0 (all
+  significant, large effect sizes), a max queue length down to 71% lower,
+  and delay at lambda=1.4 even directionally better than S0 — with no
+  active control at all.
+- **Preliminary summary (not final, based on complete data for all 6 main
+  scenarios, both S5-bypass revision attempts, and the S2+S4 combination):**
+  **S2+S4 combined is now at the top of the current ranking**; **S4 and S0
+  alone effectively tied, second tier**; **S2 alone close behind, with a
+  real edge at peak demand**; **S3 and S5's metering variant need more
+  careful geometric/control design before a final judgment, but show a
   genuinely promising signal**; **S1 and both of S5's tested bypass designs
   are not recommended as-is**. See Section 9 (ranking) and Section 8
   (SWOT) for detail.
@@ -414,14 +428,32 @@ or uniformly weak at peak demand — not because of resistance to fixing, but
 because the conflict point itself is the problem, not its priority design
 (see Section 7 for the full analysis). See `scenarios/S5_hybrid/README.md`.
 
-## 5. Results: All 6 Built Scenarios
+### S2+S4 combined — left-turn removal + U-turn, simultaneous with right-turn channelization
+
+**Status: built and simulated (this session, per next-step item 3 in
+Section 12).** This scenario goes beyond the six main S0-S5 options — a
+direct response to this study's recurring finding that "removing a
+geometric conflict without adding active control" (S2, S4) performs at
+least as well as, and sometimes better than, adding uncalibrated active
+control (S1, S5). The question: can these two low-risk fixes be applied to
+the same network at once? **No new logic was written** —
+`scenarios/S2_S4_combined/build_network.py` calls the two existing S2
+(`apply_s2_modifications`, D=250 m baseline) and S4
+(`retype_nodes_to_priority` + `mark_free_right_connections`) functions, in
+sequence, on one shared plain-XML. The combination is possible without
+interference because S2's nodes (diverges) and S4's nodes (merges) are two
+entirely separate sets of physical junctions — see
+`scenarios/S2_S4_combined/README.md` for the full node table and
+confirmation of no overlap.
+
+## 5. Results: All 6 Main Scenarios Plus One Combination
 
 ```{python}
 #| echo: false
 SCEN_LABELS = [("s0", "S0"), ("s1_fixed", "S1-fixed"), ("s1_actuated", "S1-actuated"),
                ("s2", "S2 (D=250m)"), ("s3_constrained", "S3-constrained"), ("s3_full", "S3-full"),
                ("s4", "S4"), ("s5_metering", "S5-metering"), ("s5_oneway", "S5-bypass (unconditional)"),
-               ("s5_oneway_yield", "S5-bypass (yielding)")]
+               ("s5_oneway_yield", "S5-bypass (yielding)"), ("s2s4", "S2+S4 combined")]
 ```
 
 ### 5.1 Delay (time loss)
@@ -504,7 +536,7 @@ dfstat = pd.read_csv("../outputs/tables/scenario_comparison.csv")
 scen_map = {"s1_fixed": "S1-fixed", "s1_actuated": "S1-actuated",
             "s2": "S2", "s3_constrained": "S3-constrained", "s3_full": "S3-full", "s4": "S4",
             "s5_metering": "S5-metering", "s5_oneway": "S5-bypass (unconditional)",
-            "s5_oneway_yield": "S5-bypass (yielding)"}
+            "s5_oneway_yield": "S5-bypass (yielding)", "s2s4": "S2+S4 combined"}
 key = dfstat[(dfstat["metric"] == "mean_timeloss_s") &
              (dfstat["scenario"].isin(scen_map.keys()))][
     ["scenario", "lambda", "pct_diff", "p_value", "cohens_dz"]
@@ -517,7 +549,7 @@ Markdown(key.round(3).to_markdown(index=False))
 ```{python}
 #| label: tbl-stats-collision
 #| tbl-cap: "Paired comparison of S2/S3/S4/S5 against S0 — collision count and max queue length"
-collision_scens = ["s2", "s3_constrained", "s3_full", "s4", "s5_metering", "s5_oneway", "s5_oneway_yield"]
+collision_scens = ["s2", "s3_constrained", "s3_full", "s4", "s5_metering", "s5_oneway", "s5_oneway_yield", "s2s4"]
 key2 = dfstat[(dfstat["metric"].isin(["n_collisions", "max_queue_length_m"])) &
               (dfstat["scenario"].isin(collision_scens))][
     ["scenario", "lambda", "metric", "pct_diff", "p_value"]
@@ -536,13 +568,31 @@ significant (and slightly worse) only at lambda=0.6, 1.0 and 1.2; at
 lambda=0.8 and 1.4 (peak demand) the difference is not significant. **S3
 (both options, final revised geometry)** is significant and worse at most
 low/mid lambda levels, but no longer significant at lambda=1.4 — the "fixed
-geometric cost that fades as demand rises" pattern. **S5 (both variants)**
-is significant and worse than S0 at most lambda levels; the bypass variant
-is dramatically worse at lambda=1.4 (+106%, significant) — see Section 7
-for a preliminary mechanism. On safety metrics, none of S2/S3/S4/S5 show a
+geometric cost that fades as demand rises" pattern. **S5-metering** is
+significant and worse at most lambda levels but not at lambda=1.4 (the
+policy-relevant point). **S5-bypass, under both priority designs tested**,
+is significant and worse than S0 at most lambda levels; the yielding
+design is significant at all 5 lambda levels (see Section 7, mechanism 5,
+for the full analysis of both designs).
+
+**Standout result of this section: S2+S4 combined.** Unlike every scenario
+above, this one shows a **strong, positive** safety result: collision
+counts at lambda=1.0, 1.2 and 1.4 are 84%, 80% and 83% **lower** than S0
+respectively — all three significant (p=0.046, 0.016, 0.001) with large to
+very large effect sizes (Cohen's dz down to -1.58); max queue length is
+also 60% and 71% lower at lambda=1.2 and 1.4 (significant). Delay is only
+slightly worse (6-6%, significant) at lambda=0.6 and 1.0; at lambda=0.8,
+1.2 and 1.4 the difference is not significant — and at lambda=1.4 it is
+even directionally **better** than S0 (3.3% lower). That is, at high
+demand (where it matters most), this scenario achieves dramatically better
+safety **with no measurable delay cost** — the best delay+safety
+combination in this study so far. See Section 7 for the mechanistic
+interpretation and Section 9 for its place in the ranking.
+
+On safety metrics for the remaining scenarios, none of S2/S3/S4/S5 show a
 statistically significant difference from S0 at most lambda levels (high
 variance in the 10-seed collision-count sample) — though the direction of
-the differences (S2 better, S3/S5 worse at high lambda) is notable.
+the differences (S2 better, S3/S5-bypass worse at high lambda) is notable.
 
 ## 6. Behavioral Sensitivity Diagnostic
 
@@ -750,6 +800,24 @@ on an existing conflict helps; a new conflict with no active control does
 not help, regardless of its priority design or how "clean" its geometry
 is.**
 
+**6. Why does S2+S4 combined give this study's best safety result?** This
+scenario directly tested the prediction of mechanisms 1 and 2 above at a
+larger scale: instead of removing one type of conflict (left-turn or
+right-turn), both are removed simultaneously — with no new active control
+added. The result is an 80-84% reduction in collisions (significant, large
+effect size) at lambda >= 1.0, without worsening delay at peak demand. This
+is consistent with an "additive" hypothesis: because S2's nodes (diverges)
+and S4's nodes (merges) are entirely separate, two independent conflict
+reductions on two different node sets show a **cumulative**, not
+competing or cancelling, effect — unlike, say, S5, where adding a new
+conflict (the bypass) next to a good intervention (the roundabout)
+neutralized or reversed the positive effect. **The broader lesson for
+scenario design:** when independent interventions, with no active control,
+act on non-overlapping physical junctions, cumulative benefit can be
+expected; when an intervention itself adds a new conflict (rather than
+only removing an existing one), that cumulative benefit is not guaranteed
+and can reverse.
+
 **What this means for the report:** the "S1 worse than S0" finding should
 not be read as a definitive verdict on the real-world value of traffic
 signals. It says: **a simple Webster-designed signal on under-saturated
@@ -761,13 +829,17 @@ roundabout concept is rejected"; and S5's finding says "adding
 complementary control to an imperfect geometric intervention can offset
 part of its weakness, but adding a new, uncontrolled geometric conflict
 point breaks it" — not that "combining a roundabout with smart control is
-inherently useless."
+inherently useless." And S2+S4's finding says "combining independent
+interventions with no active control, on non-overlapping junctions, can
+give a cumulative benefit" — the strongest evidence in this study yet for
+a "remove the geometric conflict first, save active control for after
+calibration" approach.
 
 ## 8. Scenario SWOT Analysis
 
-For all 6 scenarios (S0 through S5), the points below are grounded in
-**real simulated data** (uncalibrated) — no scenario remains purely
-conceptual/without data.
+For all 6 main scenarios (S0 through S5) and the S2+S4 combined scenario,
+the points below are grounded in **real simulated data** (uncalibrated) —
+no scenario remains purely conceptual/without data.
 
 | Scenario | Strengths | Weaknesses | Opportunities | Threats |
 |---|---|---|---|---|
@@ -777,49 +849,61 @@ conceptual/without data.
 | **S3 — asymmetric roundabout (constrained/full)** | Gap versus S0 shrinks and becomes non-significant as demand rises (the conventional roundabout pattern); the `full` variant (open center bay) is slightly better than `constrained` at mid/high delay | Significantly worse than S0 at low/mid demand (lambda <= 1.0); more collisions in both variants (directional, likely largely an artifact of this version's simple single-lane, non-engineered ring geometry); the `full` option is conditional on a structural sign-off outside this study's scope | Precise geometric design (real radius/deflection/island) could meaningfully improve the result; if structurally approved, the center bay gives a real benefit | Without better geometric design, this version's safety risk could recur in the real world; delay in structural approval keeps the `full` option effectively unimplementable |
 | **S4 — channelization** | Lowest-cost/lowest-risk intervention; no new junction node or structural sign-off needed; no statistically significant difference from S0 on any metric (neither better nor worse, at all 5 lambda levels) | No measurable improvement in this implementation; alone, does not remove the informal left turn | Could be a fast/low-risk intermediate step, or combine with S2 (which removes the left-turn conflict) for a cumulative effect — see next steps | May only mask symptoms rather than the root cause (no formal right-of-way for left turns) |
 | **S5 — hybrid (metering/bypass)** | Metering genuinely improves on the bare S3-constrained ring at lambda=1.4 (max queue 106 m vs. 147 m) and is more robust (worst single seed only 44 s / 483 collisions); its 20 s cycle was empirically checked, not just assumed; all three built variants share the ring infrastructure from S3 | The bypass failed under **both** priority designs tested: unconditional (priority 80) still had a severe tail risk even after its documented geometric conflict was fully resolved (1 of 10 seeds collapsed completely, 6,009 collisions in one run); yielding (priority 30, built specifically to fix that risk) turned it into a uniform, statistically significant weakness across all 10 seeds instead (lambda=1.4: 1,526.5 collisions/run) — worse, not better; neither variant yet reaches S0's level | Metering could move closer to S0 with behavioral calibration; for the bypass, two rejected fixes show the real next step is active control with an actual signal (not another priority adjustment) or grade separation | Without active control, the bypass could reproduce in the real world either a rare-but-catastrophic collapse (unconditional priority) or chronic congestion (yielding priority) — no simple priority scheme makes this location safe |
+| **S2+S4 combined** | **This study's best safety result:** 80-84% fewer collisions than S0 at lambda >= 1.0 (all significant, large effect sizes); max queue length down to 71% lower at lambda=1.4; even delay at lambda=1.4 is directionally better than S0 (not worse); needed no new code — just calling two existing S2/S4 functions on one network; no active control, no S1-style queuing risk | Delay slightly (6-6%) worse, significant, at lambda=0.6 and 1.0; inherits every explicit limitation of S2 (assumed U-turn share) and S4 (no curbside-parking model effect); the "additive" hypothesis was confirmed by data for this specific pair, but was not guaranteed in advance | A natural, immediate candidate for the next implementation step — low cost, no structural sign-off, no active control; the "combine independent interventions on non-overlapping junctions" pattern may generalize to other scenario pairs | Conditional on real behavioral calibration (Section 10) before any firm implementation recommendation; real left/right-turn count data could shift the size of this benefit |
 
 ## 9. Preliminary Conclusions and Ranking
 
 ::: {.callout-warning}
 ## This is not a final ranking
-All 6 scenarios have now been built, simulated, and given a qualitative/SWOT
-analysis (Sections 7 and 8). The ranking below is **based solely on
-available data** and, absent real calibration (Section 10), should not be
-the basis for an implementation decision; S3 and S5 each need a more
-serious round of geometric/control revision before a final judgment
-(Section 12).
+All 6 main scenarios plus the S2+S4 combined scenario have now been built,
+simulated, and given a qualitative/SWOT analysis (Sections 7 and 8). The
+ranking below is **based solely on available data** and, absent real
+calibration (Section 10), should not be the basis for an implementation
+decision; S3 and S5 each need a more serious round of geometric/control
+revision before a final judgment (Section 12).
 :::
 
 Based on current evidence, a preliminary ranking (best to worst, based on a
 combination of delay + safety across the lambda range, with particular
 weight on behavior at peak demand lambda=1.4):
 
-1. **S0 (existing condition) and S4 (channelization) — effectively tied at
-   the top of the ranking.** S4 showed no statistically significant
-   difference from S0 on any metric; i.e., this lowest-risk intervention is
-   at minimum harmless and has a low implementation cost.
-2. **S2 (left-turn removal + real U-turn) — close behind, with a real edge
-   at peak demand.** Accounting for the real cost of the U-turn detour
-   (not modeled in this report's first cut), S2 is slightly (7-12%) worse
-   than S0 at low/mid demand, but at exactly lambda=1.4 — the demand level
-   of most concern for this intersection's future — it remains **not
+1. **S2+S4 combined — this study's best safety result, at the top of the
+   ranking.** An 80-84% reduction in collisions versus S0 at lambda >= 1.0
+   (all significant, large effect sizes), max queue length down to 71%
+   lower, and delay at lambda=1.4 directionally **better** than S0 (not
+   worse) — with no active control or new code (just combining two
+   existing fixes, S2 and S4). The only cost: slightly (6-6%) worse delay
+   at lambda=0.6 and 1.0. This combination was built directly from this
+   study's own recurring observation ("removing a geometric conflict
+   without active control performs at least as well, and sometimes
+   better") and confirmed that observation with the strongest evidence yet.
+2. **S0 (existing condition) and S4 (channelization, alone) — effectively
+   tied, second tier.** S4 showed no statistically significant difference
+   from S0 on any metric; i.e., this lowest-risk single intervention is at
+   minimum harmless and has a low implementation cost.
+3. **S2 (left-turn removal + real U-turn, alone) — close behind, with a
+   real edge at peak demand.** Accounting for the real cost of the U-turn
+   detour (not modeled in this report's first cut), S2 is slightly (7-12%)
+   worse than S0 at low/mid demand, but at exactly lambda=1.4 — the demand
+   level of most concern for this intersection's future — it remains **not
    significantly different** from S0 and is directionally safer.
    Sensitivity to U-turn distance (150/250/350 m) was negligible.
-3. **S3 (asymmetric roundabout, both options) and S5-metering — need more
+4. **S3 (asymmetric roundabout, both options) and S5-metering — need more
    careful geometric/control design before a final judgment, but with
    promising evidence.** S3 is significantly worse than S0 at low/mid
    demand (both delay and directionally in collisions), but the gap shrinks
    quickly as demand rises — the conventional roundabout pattern.
    **S5-metering** goes one step further: compared to the bare
    S3-constrained ring, it is genuinely **better** at lambda=1.4 (max queue
-   106 m vs. 147 m; delay and collisions also slightly lower) — direct
-   evidence that even an untuned metering signal can offset part of a
-   small roundabout's inherent weakness at peak demand. Both of these
-   conceptual implementations (a single-lane ring with no engineered
-   deflection) most likely represent something close to the worst case for
-   these concepts; no definitive judgment about the real value of "a
-   roundabout" or "a roundabout + metering" can be drawn from this data.
-4. **S1 (signal, both modes) and S5-bypass (both priority designs), as
+   106 m vs. 147 m, and more robust — worst single seed only 44 s / 483
+   collisions) — direct evidence that even an untuned metering signal can
+   offset part of a small roundabout's inherent weakness at peak demand.
+   Both of these conceptual implementations (a single-lane ring with no
+   engineered deflection) most likely represent something close to the
+   worst case for these concepts; no definitive judgment about the real
+   value of "a roundabout" or "a roundabout + metering" can be drawn from
+   this data.
+5. **S1 (signal, both modes) and S5-bypass (both priority designs), as
    currently implemented — not recommended.** Section 6's diagnostic showed
    S1 would remain worse than S0 even under hypothetically calibrated
    behavior (the primary delay mechanism is the signal design, not
@@ -840,14 +924,17 @@ weight on behavior at peak demand lambda=1.4):
    the same behavioral mechanism shared with S1 — see Section 7 (mechanism
    5) for the full analysis.
 
-**Process recommendation:** S4 (low-risk, no negative effect) and S2
-(promising at peak demand) are the natural candidates for the next
-implementation step, **conditional on real behavioral calibration** (since
-Section 6 showed the safety result is highly sensitive to these
-parameters). S3 and S5-metering need a more serious round of
-geometric/control design (not just this version's conceptual ring or
-netconvert's default cycle) before a fair comparison; S5-bypass first needs
-its own documented geometric conflict resolved, or it remains in S1's tier.
+**Process recommendation:** **S2+S4 combined** is now the strongest
+candidate for the next implementation step — low cost, no active control,
+and this study's best safety evidence; S4 alone (low-risk, no negative
+effect) and S2 alone (promising at peak demand) are its natural backups.
+All of these recommendations are **conditional on real behavioral
+calibration** (since Section 6 showed the safety result is highly
+sensitive to these parameters). S3 and S5-metering need a more serious
+round of geometric/control design (not just this version's conceptual ring
+or netconvert's default cycle) before a fair comparison; S5-bypass now
+needs genuine active control (not a priority/geometry adjustment) to move
+out of S1's tier.
 
 ## 10. Calibration and Validation Plan
 
@@ -876,11 +963,17 @@ performed on a held-out period (e.g., a different day's peak).
   the report) — no absolute number (seconds, collision count) should be
   read as a real-world prediction; only the relative direction and
   magnitude of differences is valid.
-- **All 6 scenarios have been built, simulated, and given a qualitative/SWOT
-  analysis** (Sections 7 and 8), but Section 9's conclusion remains
-  preliminary and conditional on real calibration — and neither S3 nor
-  S5-metering (both built on the same conceptual S3 ring) has been tested
-  with finalized geometry/control.
+- **All 6 main scenarios plus the S2+S4 combined scenario have been built,
+  simulated, and given a qualitative/SWOT analysis** (Sections 7 and 8),
+  but Section 9's conclusion remains preliminary and conditional on real
+  calibration — and neither S3 nor S5-metering (both built on the same
+  conceptual S3 ring) has been tested with finalized geometry/control.
+- **S2+S4 combined**, despite giving this study's best safety result,
+  inherits two assumptions it did not itself introduce: S2's assumed 15%
+  U-turn share and S4's not modeling the curbside-parking effect. The
+  "additive" hypothesis was confirmed by data only for this specific pair;
+  generalizing to other combinations (e.g. S2+S1) is not guaranteed in
+  advance.
 - **S3 (both options) is a deliberately simplified geometric
   implementation, though improved:** the ring's shape is now an arc (not
   the first cut's straight line) drawn between 4 real points, but it is
@@ -945,21 +1038,25 @@ performed on a held-out period (e.g., a different day's peak).
    another priority tweak but an actual signal on the bypass itself (like
    S1, with its cycle timed, and the same behavioral-calibration caveats)
    or full grade separation — still the top priority on this list.
-2. **More precise S3 geometric design:** replace the current single-lane
+2. **Limited behavioral calibration** (Section 10) — now the top priority
+   after item 1, because **S2+S4 combined** (item 3 in the previous version
+   of this list, now built and simulated — see Sections 5, 7, 8, 9) is the
+   current best implementation candidate, and its safety result, like every
+   other scenario in this study, is sensitive to uncalibrated behavioral
+   parameters; also needed before any implementation recommendation
+   regarding S1 or S5-bypass.
+3. **More precise S3 geometric design:** replace the current single-lane
    arc ring with a real roundabout (engineered radius/deflection/splitter
    island) — S3's current result is still likely more pessimistic than a
    real engineered design; this automatically carries over to S5-metering,
    since it is built on the same ring.
-3. Investigate a **combined S2+S4** scenario (left-turn removal +
-   right-turn channelization simultaneously) — both are low-risk and use
-   no active control; they may produce a cumulative effect.
-4. **Limited behavioral calibration** (Section 10) before any implementation
-   recommendation regarding S1 or S5-bypass — Section 6's diagnostic and
-   the S5-bypass geometric-fix experiment (item 1 above) both showed the
-   safety result is highly sensitive to these parameters, not just to
-   geometry or control type.
-5. Global sensitivity analysis (Sobol/factorial) over lambda, left-turn
-   share, motorcycle share, tau, and turning radius.
-6. Replace the t-based confidence interval for collision counts with a
+4. Global sensitivity analysis (Sobol/factorial) over lambda, left-turn
+   share, motorcycle share, tau, and turning radius — now including S2+S4,
+   to see how robust its safety benefit is to peak demand and turn-share
+   assumptions.
+5. Replace the t-based confidence interval for collision counts with a
    rare-event model (Poisson/negative binomial) — S5-bypass just gave a
    fresh, concrete illustration of why this is needed (Section 11).
+6. Investigate further combinations (e.g. **S2+S4+metering**) now that
+   independent interventions on non-overlapping junctions have been shown
+   to give a cumulative effect (Section 7, mechanism 6).
