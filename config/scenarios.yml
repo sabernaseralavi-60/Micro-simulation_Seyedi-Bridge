@@ -180,3 +180,40 @@ scenarios:
         net_file: "scenarios/S5_hybrid/network/seyedi_S5_oneway_yield.net.xml"
         out_dir: "scenarios/S5_hybrid/out/oneway_yield"
         table_prefix: "s5_oneway_yield"
+
+  S2_S4_combined:
+    label_fa: "ترکیبی S2+S4 (حذف گردش چپ + دوربرگردان، هم‌زمان با کانالیزاسیون گردش راست)"
+    label_en: "Combined S2+S4 — left-turn removal + U-turn, simultaneous with right-turn channelization"
+    status: built
+    design_note: >
+      طبق گام ۳ بخش ۱۲ گزارش: هر دو اصلاح S2 و S4 کم‌ریسک و بدون کنترل
+      فعال‌اند و روی دو مجموعه گرهٔ فیزیکی کاملاً مجزا عمل می‌کنند (S2:
+      گره‌های انشعاب چپ‌گرد؛ S4: گره‌های ادغام راست‌گرد) — پس بدون تداخل
+      روی یک شبکهٔ مشترک قابل‌ترکیب‌اند. اسکریپت
+      scenarios/S2_S4_combined/build_network.py هیچ منطق تازه‌ای نمی‌سازد؛
+      دقیقاً توابع موجود S2 (`apply_s2_modifications`، D=۲۵۰م مبنا) و S4
+      (`retype_nodes_to_priority` + `mark_free_right_connections`) را روی
+      یک plain-XML مشترک، به‌ترتیب، فراخوانی می‌کند. تقاضا از همان
+      demand_blocked_edges/demand_extra_turn_rules سناریوی S2 (D=۲۵۰)
+      استفاده می‌کند — توپولوژی دوربرگردان این دو سناریو یکسان است.
+    demand_blocked_edges:
+      - "643263251"
+      - "713864643"
+      - "627633586"
+      - "643263250"
+      - "683662933"
+    demand_extra_turn_rules:
+      - from: "410247492_mid"
+        options:
+          - {to: "410247492_east", weight: 85}
+          - {to: "s2_uturn_east", weight: 15}
+      - from: "627008192_mid"
+        options:
+          - {to: "627008192_west", weight: 85}
+          - {to: "s2_uturn_west", weight: 15}
+    control_variants:
+      default:
+        label_fa: "S2 (D=۲۵۰م) + S4 ترکیبی"
+        net_file: "scenarios/S2_S4_combined/network/seyedi_S2_S4_combined.net.xml"
+        out_dir: "scenarios/S2_S4_combined/out/default"
+        table_prefix: "s2s4"

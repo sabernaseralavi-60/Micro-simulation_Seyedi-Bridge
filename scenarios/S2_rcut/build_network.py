@@ -124,14 +124,13 @@ def fmt_shape(shape, z: str | None = None) -> str:
     return " ".join(f"{x:.2f},{y:.2f},{z}" for x, y in shape)
 
 
-def build_for_distance(net, D: float, out_dir: pathlib.Path, left_pct: float) -> pathlib.Path:
-    plain_prefix = out_dir / "plain" / "seyedi_s2"
-    plain_prefix.parent.mkdir(parents=True, exist_ok=True)
-    for suffix in (".nod.xml", ".edg.xml", ".con.xml", ".tll.xml", ".typ.xml"):
-        src = BASE_PLAIN_PREFIX.with_suffix(suffix)
-        if src.exists():
-            shutil.copy(src, plain_prefix.with_suffix(suffix))
-
+def apply_s2_modifications(net, D: float, plain_prefix: pathlib.Path) -> None:
+    """هستهٔ قابل‌استفادهٔ مجدد S2 (گام‌های ۱ تا ۵ — بدون netconvert نهایی):
+    حذف گردش چپ + شکافتن دو یال عرشه + افزودن دوربرگردان، مستقیماً روی
+    plain-XML موجود در `plain_prefix` (که باید از قبل کپی شده باشد). جدا
+    شد (نشست ۵) تا `scenarios/S2_S4_combined/build_network.py` بتواند این
+    مرحله را قبل از اعمال کانالیزاسیون S4 روی همان فایل‌ها فراخوانی کند —
+    بدون کپی جداگانهٔ منطق."""
     # --- گام ۱: حذف اتصال‌های گردش چپ (مشترک با v1) ---
     con_path = plain_prefix.with_suffix(".con.xml")
     con_tree = ET.parse(con_path)
@@ -246,6 +245,17 @@ def build_for_distance(net, D: float, out_dir: pathlib.Path, left_pct: float) ->
             c.set("from", f"{WB_EDGE}_west")
     con_tree.write(con_path, encoding="UTF-8", xml_declaration=True)
 
+
+def build_for_distance(net, D: float, out_dir: pathlib.Path, left_pct: float) -> pathlib.Path:
+    plain_prefix = out_dir / "plain" / "seyedi_s2"
+    plain_prefix.parent.mkdir(parents=True, exist_ok=True)
+    for suffix in (".nod.xml", ".edg.xml", ".con.xml", ".tll.xml", ".typ.xml"):
+        src = BASE_PLAIN_PREFIX.with_suffix(suffix)
+        if src.exists():
+            shutil.copy(src, plain_prefix.with_suffix(suffix))
+
+    apply_s2_modifications(net, D, plain_prefix)
+
     # --- گام ۶: بازسازی شبکه ---
     net_dir = out_dir / "network"
     net_dir.mkdir(parents=True, exist_ok=True)
@@ -253,9 +263,9 @@ def build_for_distance(net, D: float, out_dir: pathlib.Path, left_pct: float) ->
     netconvert = SUMO_HOME / "bin" / "netconvert.exe"
     cmd = [
         str(netconvert),
-        "--node-files", str(nod_path),
-        "--edge-files", str(edg_path),
-        "--connection-files", str(con_path),
+        "--node-files", str(plain_prefix.with_suffix(".nod.xml")),
+        "--edge-files", str(plain_prefix.with_suffix(".edg.xml")),
+        "--connection-files", str(plain_prefix.with_suffix(".con.xml")),
         "--tllogic-files", str(plain_prefix.with_suffix(".tll.xml")),
         "--type-files", str(TYPEMAP),
         "--output-file", str(out_net),

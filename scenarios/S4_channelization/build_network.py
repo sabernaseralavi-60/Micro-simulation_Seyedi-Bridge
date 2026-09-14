@@ -75,8 +75,12 @@ def copy_base_plain() -> None:
             shutil.copy(src, PLAIN_PREFIX.with_suffix(suffix))
 
 
-def retype_nodes_to_priority() -> int:
-    nod_path = PLAIN_PREFIX.with_suffix(".nod.xml")
+def retype_nodes_to_priority(plain_prefix: pathlib.Path = PLAIN_PREFIX) -> int:
+    """`plain_prefix` پارامتر شد (نشست ۵) تا scenarios/S2_S4_combined بتواند
+    همین منطق را روی plain-XML از قبل تغییریافتهٔ S2 اعمال کند، بدون کپی
+    جداگانهٔ کد — گره‌های S4 (ادغام) و S2 (انشعاب) کاملاً مجزا هستند، پس
+    این دو مرحله بدون تداخل روی هم قابل‌اعمال‌اند."""
+    nod_path = plain_prefix.with_suffix(".nod.xml")
     tree = ET.parse(nod_path)
     n = 0
     for node in tree.getroot().findall("node"):
@@ -87,8 +91,8 @@ def retype_nodes_to_priority() -> int:
     return n
 
 
-def mark_free_right_connections() -> int:
-    con_path = PLAIN_PREFIX.with_suffix(".con.xml")
+def mark_free_right_connections(plain_prefix: pathlib.Path = PLAIN_PREFIX) -> int:
+    con_path = plain_prefix.with_suffix(".con.xml")
     tree = ET.parse(con_path)
     n = 0
     for node_id, (through_edge, out_edge) in FREE_RIGHT_CONNECTIONS.items():
