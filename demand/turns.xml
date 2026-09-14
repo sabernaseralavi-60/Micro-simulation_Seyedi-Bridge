@@ -9,23 +9,15 @@
         </fromEdge>
         <fromEdge id="592154956#0-AddedOffRampEdge">
             <!-- right -->
-            <toEdge id="627154373" probability="8.8"/>
+            <toEdge id="627154373" probability="17.6"/>
             <!-- through -->
-            <toEdge id="627167743#0" probability="41.2"/>
-            <!-- right -->
-            <toEdge id="s3_ring_N_W" probability="8.8"/>
-            <!-- through -->
-            <toEdge id="s5_bypass_N_S" probability="41.2"/>
+            <toEdge id="627167743#0" probability="82.4"/>
         </fromEdge>
         <fromEdge id="610531293#0-AddedOffRampEdge">
             <!-- through -->
-            <toEdge id="610531293#4" probability="41.2"/>
+            <toEdge id="610531293#4" probability="82.4"/>
             <!-- left -->
-            <toEdge id="713864643" probability="8.8"/>
-            <!-- right -->
-            <toEdge id="s3_ring_S_E" probability="8.8"/>
-            <!-- through -->
-            <toEdge id="s5_bypass_S_N" probability="41.2"/>
+            <toEdge id="713864643" probability="17.6"/>
         </fromEdge>
     </interval>
 </turns>
