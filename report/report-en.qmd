@@ -427,6 +427,16 @@ the "through -> U-turn -> return -> right turn" path — not just a
 statistical reassignment of destination. See
 `scenarios/S2_rcut/README.md`.
 
+**Field-check note (2026-09-14):** a direct audit of the raw OSM data
+(`docs/network_audit.md`) found that the existing condition (S0) already
+has an informal reversal/U-turn path close to the weave center (edge
+`1165329134`, OSM tag `turn:lanes=reverse`, ~70m away) — likely part of
+the north loop ramp. So S2 does not add a capability from zero; it
+replaces this *close, uncontrolled* reversal path with a *farther,
+engineered* one (150-350m, with a designed acceleration/deceleration
+length) — S2's core trade-off is "distance in exchange for
+safety/order", not "U-turn vs. no U-turn".
+
 ![S2 (D=250m) — x markers show the 5 removed left-turn connections; short red lines show the U-turn connectors added at +-250m from center on the two long deck edges](../outputs/figures/scenario_diagrams/s2_en.png){#fig-s2-diagram width=80%}
 
 ### S3 — Asymmetric Roundabout (two options)
