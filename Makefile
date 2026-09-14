@@ -13,7 +13,7 @@ export SUMO_HOME := $(SUMO_HOME_DIR)
 export PYTHONIOENCODING := utf-8
 export QUARTO_PYTHON := $(CURDIR)/$(PYTHON)
 
-.PHONY: all check-env sketch network patch-geometry demand webster-timing scenario-s1 scenario-s2 scenario-s3 scenario-s4 scenario-s5 scenario-s2s4 run analyze statistics behavior-diagnostic tune-s5-metering figures report publish clean
+.PHONY: all check-env sketch network patch-geometry demand webster-timing scenario-s1 scenario-s2 scenario-s3 scenario-s4 scenario-s5 scenario-s2s4 run analyze statistics behavior-diagnostic tune-s5-metering behavioral-calibration figures report publish clean
 
 all: check-env sketch network patch-geometry demand webster-timing scenario-s1 scenario-s2 scenario-s3 scenario-s4 scenario-s5 scenario-s2s4 run analyze statistics figures report
 
@@ -97,6 +97,12 @@ behavior-diagnostic:
 ## در scenario-s5 کدنویسی شده؛ فقط برای بازتولید مستندسازی تصمیم طراحی
 tune-s5-metering:
 	$(PYTHON) scenarios/S5_hybrid/tune_metering_cycle.py
+
+## فاز ۶ (تأیید صریح کاربر): آزمون استحکام رفتاری دوهدفه با Optuna — رجوع به
+## سربرگ src/12_behavioral_calibration.py برای این‌که چرا این calibration-to-
+## groundtruth نیست. طولانی (~۴۸۰ اجرای SUMO)؛ در «all» نیست، resume-پذیر.
+behavioral-calibration:
+	$(PYTHON) src/12_behavioral_calibration.py
 
 ## فاز ۳: نمودار KPI به تفکیک پا + نمودار حساسیت به λ
 ## فاز ۴ (نشست جاری): + اسکچ شماتیک هر سناریو (src/11_scenario_diagrams.py)

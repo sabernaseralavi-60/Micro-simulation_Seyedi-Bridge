@@ -265,6 +265,43 @@ experiment_design:
       تصادفی‌سازی انتساب گردش بر مبنای نسبت‌ها) و هم به sumo (برای تصادفی‌سازی
       رفتار تعقیب/تغییرخط، sigma) داده می‌شود تا هر seed یک تکرار مستقل و
       کاملاً قابل‌بازتولید باشد."
+  behavioral_calibration_search:
+    value:
+      scenarios: ["s1_fixed", "s5_oneway_priority"]
+      lambda: 1.4
+      n_seeds_per_trial: 2
+      n_trials: 40
+      parameters:
+        - {name: "tau_multiplier", low: 0.7, high: 1.3}
+        - {name: "minGap_multiplier", low: 0.7, high: 1.3}
+        - {name: "sigma_multiplier", low: 0.7, high: 1.3}
+        - {name: "impatience_multiplier", low: 0.7, high: 1.3}
+        - {name: "jmIgnoreFoeProb_multiplier", low: 0.7, high: 1.3}
+        - {name: "lcAssertive_multiplier", low: 0.7, high: 1.3}
+      objectives: ["mean_timeloss_s (minimize)", "mean_collisions_per_run (minimize)"]
+    unit: mixed
+    source: engineering_judgement
+    range_low: null
+    range_high: null
+    sensitivity: true
+    note: "کاربر در ۱۴۰۵/۰۶/۲۴ صریحاً تأیید کرد چون هنوز داده میدانی (شمارش
+      گردش/زمان سفر) برای کالیبراسیون واقعی (§۵ CLAUDE.md، GEH<5) وجود ندارد،
+      این جست‌وجو یک calibration-to-groundtruth نیست؛ بلکه یک آزمون استحکام
+      دوهدفه (Pareto، NSGA-II در Optuna) است که مستقیماً پرسش باز فاز ۴ را
+      جواب می‌دهد: آیا فروپاشی برخورد در S1/S5-bypass محصول یک نقطهٔ خاص و
+      دلبخواهی از فضای پارامتر تهاجمی است یا در سراسر بازهٔ ۰.۷-۱.۳ برابر
+      مقادیر فعلی project (خودِ آن مقادیر «تهاجمی‌تر از پیش‌فرض SUMO» با
+      قضاوت مهندسی انتخاب شده بودند، رجوع به config/vtypes.yml) پایدار
+      می‌ماند. هر ۶ ضریب به‌صورت یکسان روی مقدار فعلی همان پارامتر در تمام
+      ردیف‌های vtypes.yml (سواری/موتور/تاکسی/وانت/اتوبوس/کامیونت) اعمال
+      می‌شود — یعنی آراستگی نسبی ناوگان (مثلاً موتورسیکلت همچنان تهاجمی‌تر از
+      اتوبوس) حفظ می‌شود، فقط «شدت کلی تهاجمی‌بودن» روی یک محور جست‌وجو
+      می‌شود. دامنهٔ سناریو/λ به دو مورد صریحاً پرمشکل‌ترین یافتهٔ فاز ۴ (S1
+      fixed و S5-oneway_priority، هر دو در λ=۱.۴ که نقطهٔ سیاستی اوج است)
+      محدود شد تا هزینهٔ محاسباتی معقول بماند. اندازهٔ نهایی (۴۰ ترایال × ۲
+      سناریو × ۲ seed = ۱۶۰ ران، ~۲.۳ ساعت) پس از یک سنجش زمانی واقعی (۱۰۳
+      ثانیه برای هر ترایال با seed=۱) و تأیید مستقیم کاربر انتخاب شد — نه
+      یک برآورد پیشین بدون سنجش."
   global_sensitivity_factors:
     value:
       - {name: "demand_scale", low: 0.6, high: 1.4}
