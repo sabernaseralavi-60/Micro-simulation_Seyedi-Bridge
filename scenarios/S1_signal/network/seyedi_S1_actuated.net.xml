@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2026-09-14T01:27:39.669139+03:30 by Eclipse SUMO netconvert 1.27.1
+<!-- generated on 2026-09-14T16:39:05.558511+03:30 by Eclipse SUMO netconvert 1.27.1
 <netconvertConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <input>
         <node-files value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\scenarios\S1_signal\plain\seyedi_s1.nod.xml"/>
         <edge-files value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\scenarios\S1_signal\plain\seyedi_s1.edg.xml"/>
         <connection-files value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\scenarios\S1_signal\plain\seyedi_s1.con.xml"/>
-        <tllogic-files value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\scenarios\S1_signal\plain\seyedi_s1.tll.xml"/>
+        <tllogic-files value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\scenarios\S1_signal\plain\seyedi_s1_actuated.tll.xml"/>
         <type-files value="D:\ReproducibleResearch_R_Projects\Simulation_Seyedi\config\typemap\urban_ir.typ.xml"/>
     </input>
 
@@ -469,14 +469,18 @@
     <tlLogic id="4120846834" type="actuated" programID="0" offset="0">
         <phase duration="42" state="Gr" minDur="5" maxDur="50"/>
         <phase duration="3"  state="yr"/>
+        <phase duration="4"  state="rr"/>
         <phase duration="42" state="rG" minDur="5" maxDur="50"/>
         <phase duration="3"  state="ry"/>
+        <phase duration="4"  state="rr"/>
     </tlLogic>
     <tlLogic id="4120854403" type="actuated" programID="0" offset="0">
         <phase duration="39" state="Grrr" minDur="10" maxDur="50"/>
         <phase duration="6"  state="yrrr"/>
+        <phase duration="1.30"  state="rrrr"/>
         <phase duration="39" state="rGGG" minDur="13" maxDur="50"/>
         <phase duration="6"  state="ryyy"/>
+        <phase duration="1.30"  state="rrrr"/>
     </tlLogic>
     <tlLogic id="5924857047" type="actuated" programID="0" offset="0">
         <phase duration="90" state="GGGG" minDur="20" maxDur="100"/>
@@ -484,14 +488,18 @@
     <tlLogic id="6053976954" type="actuated" programID="0" offset="0">
         <phase duration="39" state="GGrr" minDur="13" maxDur="50"/>
         <phase duration="6"  state="yyrr"/>
+        <phase duration="2.80"  state="rrrr"/>
         <phase duration="39" state="rrGG" minDur="13" maxDur="50"/>
         <phase duration="6"  state="rryy"/>
+        <phase duration="2.80"  state="rrrr"/>
     </tlLogic>
     <tlLogic id="6053976957" type="actuated" programID="0" offset="0">
         <phase duration="40" state="Gr" minDur="5" maxDur="50"/>
         <phase duration="5"  state="yr"/>
+        <phase duration="1.30"  state="rr"/>
         <phase duration="40" state="rG" minDur="10" maxDur="50"/>
         <phase duration="5"  state="ry"/>
+        <phase duration="1.30"  state="rr"/>
     </tlLogic>
     <tlLogic id="6403676802" type="actuated" programID="0" offset="0">
         <phase duration="90" state="GGG" minDur="23" maxDur="100"/>
@@ -502,10 +510,13 @@
     <tlLogic id="6711509164" type="actuated" programID="0" offset="0">
         <phase duration="25" state="rrG" minDur="10" maxDur="50"/>
         <phase duration="5"  state="rry"/>
+        <phase duration="2.40"  state="rrr"/>
         <phase duration="25" state="Grr" minDur="10" maxDur="50"/>
         <phase duration="5"  state="yrr"/>
+        <phase duration="2.40"  state="rrr"/>
         <phase duration="25" state="rGr" minDur="10" maxDur="50"/>
         <phase duration="5"  state="ryr"/>
+        <phase duration="2.40"  state="rrr"/>
     </tlLogic>
     <tlLogic id="6711509168" type="actuated" programID="0" offset="0">
         <phase duration="90" state="GG" minDur="15" maxDur="100"/>

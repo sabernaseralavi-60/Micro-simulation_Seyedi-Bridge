@@ -2,7 +2,7 @@
 <!--
   فاز ۱-۳ — تقاضای فرضی چندناوگانی (Walking Skeleton + ترکیب ناوگان ایران).
   تولید خودکار توسط src/03_build_demand.py از روی assumptions.yml و vtypes.yml.
-  lambda_scale=1.0, motorcycle_share=None, tau_multiplier=1.0
+  lambda_scale=1.4, motorcycle_share=None, tau_multiplier=1.0
   دستی ویرایش نکن — رجوع به config/assumptions.yml برای منبع هر عدد.
 -->
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
@@ -12,28 +12,28 @@
     <vType id="pickup" vClass="delivery" length="5.0" width="1.9" maxSpeed="33.3" accel="2.2" decel="4.2" sigma="0.6" tau="1.0" minGap="2.2" impatience="0.4" jmIgnoreFoeProb="0.1" lcAssertive="1.3"/>
     <vType id="bus" vClass="bus" length="12.0" width="2.55" maxSpeed="25.0" accel="1.2" decel="3.5" sigma="0.4" tau="1.3" minGap="2.5" impatience="0.2" jmIgnoreFoeProb="0.02" lcAssertive="0.8"/>
     <vType id="truck_light" vClass="truck" length="7.0" width="2.3" maxSpeed="27.8" accel="1.5" decel="3.8" sigma="0.5" tau="1.2" minGap="2.5" impatience="0.3" jmIgnoreFoeProb="0.05" lcAssertive="1.0"/>
-    <flow id="from_west_passenger.0" type="passenger" from="410247492" begin="0" end="3600" number="440"/>
-    <flow id="from_west_motorcycle.1" type="motorcycle" from="410247492" begin="0" end="3600" number="240"/>
-    <flow id="from_west_taxi.2" type="taxi" from="410247492" begin="0" end="3600" number="64"/>
-    <flow id="from_west_pickup.3" type="pickup" from="410247492" begin="0" end="3600" number="32"/>
-    <flow id="from_west_bus.4" type="bus" from="410247492" begin="0" end="3600" number="8"/>
-    <flow id="from_west_truck_light.5" type="truck_light" from="410247492" begin="0" end="3600" number="16"/>
-    <flow id="from_east_passenger.6" type="passenger" from="412303657#0" begin="0" end="3600" number="440"/>
-    <flow id="from_east_motorcycle.7" type="motorcycle" from="412303657#0" begin="0" end="3600" number="240"/>
-    <flow id="from_east_taxi.8" type="taxi" from="412303657#0" begin="0" end="3600" number="64"/>
-    <flow id="from_east_pickup.9" type="pickup" from="412303657#0" begin="0" end="3600" number="32"/>
-    <flow id="from_east_bus.10" type="bus" from="412303657#0" begin="0" end="3600" number="8"/>
-    <flow id="from_east_truck_light.11" type="truck_light" from="412303657#0" begin="0" end="3600" number="16"/>
-    <flow id="from_north_passenger.12" type="passenger" from="592154956#0" begin="0" end="3600" number="275"/>
-    <flow id="from_north_motorcycle.13" type="motorcycle" from="592154956#0" begin="0" end="3600" number="150"/>
-    <flow id="from_north_taxi.14" type="taxi" from="592154956#0" begin="0" end="3600" number="40"/>
-    <flow id="from_north_pickup.15" type="pickup" from="592154956#0" begin="0" end="3600" number="20"/>
-    <flow id="from_north_bus.16" type="bus" from="592154956#0" begin="0" end="3600" number="5"/>
-    <flow id="from_north_truck_light.17" type="truck_light" from="592154956#0" begin="0" end="3600" number="10"/>
-    <flow id="from_south_passenger.18" type="passenger" from="610531293#0" begin="0" end="3600" number="275"/>
-    <flow id="from_south_motorcycle.19" type="motorcycle" from="610531293#0" begin="0" end="3600" number="150"/>
-    <flow id="from_south_taxi.20" type="taxi" from="610531293#0" begin="0" end="3600" number="40"/>
-    <flow id="from_south_pickup.21" type="pickup" from="610531293#0" begin="0" end="3600" number="20"/>
-    <flow id="from_south_bus.22" type="bus" from="610531293#0" begin="0" end="3600" number="5"/>
-    <flow id="from_south_truck_light.23" type="truck_light" from="610531293#0" begin="0" end="3600" number="10"/>
+    <flow id="from_west_passenger.0" type="passenger" from="410247492" begin="0" end="3600" number="616"/>
+    <flow id="from_west_motorcycle.1" type="motorcycle" from="410247492" begin="0" end="3600" number="336"/>
+    <flow id="from_west_taxi.2" type="taxi" from="410247492" begin="0" end="3600" number="90"/>
+    <flow id="from_west_pickup.3" type="pickup" from="410247492" begin="0" end="3600" number="45"/>
+    <flow id="from_west_bus.4" type="bus" from="410247492" begin="0" end="3600" number="11"/>
+    <flow id="from_west_truck_light.5" type="truck_light" from="410247492" begin="0" end="3600" number="22"/>
+    <flow id="from_east_passenger.6" type="passenger" from="412303657#0" begin="0" end="3600" number="616"/>
+    <flow id="from_east_motorcycle.7" type="motorcycle" from="412303657#0" begin="0" end="3600" number="336"/>
+    <flow id="from_east_taxi.8" type="taxi" from="412303657#0" begin="0" end="3600" number="90"/>
+    <flow id="from_east_pickup.9" type="pickup" from="412303657#0" begin="0" end="3600" number="45"/>
+    <flow id="from_east_bus.10" type="bus" from="412303657#0" begin="0" end="3600" number="11"/>
+    <flow id="from_east_truck_light.11" type="truck_light" from="412303657#0" begin="0" end="3600" number="22"/>
+    <flow id="from_north_passenger.12" type="passenger" from="592154956#0" begin="0" end="3600" number="385"/>
+    <flow id="from_north_motorcycle.13" type="motorcycle" from="592154956#0" begin="0" end="3600" number="210"/>
+    <flow id="from_north_taxi.14" type="taxi" from="592154956#0" begin="0" end="3600" number="56"/>
+    <flow id="from_north_pickup.15" type="pickup" from="592154956#0" begin="0" end="3600" number="28"/>
+    <flow id="from_north_bus.16" type="bus" from="592154956#0" begin="0" end="3600" number="7"/>
+    <flow id="from_north_truck_light.17" type="truck_light" from="592154956#0" begin="0" end="3600" number="14"/>
+    <flow id="from_south_passenger.18" type="passenger" from="610531293#0" begin="0" end="3600" number="385"/>
+    <flow id="from_south_motorcycle.19" type="motorcycle" from="610531293#0" begin="0" end="3600" number="210"/>
+    <flow id="from_south_taxi.20" type="taxi" from="610531293#0" begin="0" end="3600" number="56"/>
+    <flow id="from_south_pickup.21" type="pickup" from="610531293#0" begin="0" end="3600" number="28"/>
+    <flow id="from_south_bus.22" type="bus" from="610531293#0" begin="0" end="3600" number="7"/>
+    <flow id="from_south_truck_light.23" type="truck_light" from="610531293#0" begin="0" end="3600" number="14"/>
 </routes>

@@ -41,6 +41,39 @@ def fix_console_encoding() -> None:
             pass
 
 
+def compute_cycle(q_a: float, cap_a: float, q_b: float, cap_b: float,
+                   L_per_phase: float, bounds: dict, min_green_s: float = 5.0) -> dict:
+    """هستهٔ محاسباتیِ وبستر برای دو فاز رقابتی (خالص، بدون خواندن فایل) —
+    توسط webster() (گرهٔ S1) و توسط scenarios/S5_hybrid/build_network.py
+    (گرهٔ چراغ واقعی بای‌پس S5) هر دو صدا زده می‌شود، تا فرمول یک‌بار نوشته
+    شود و دو زمینهٔ متفاوت (ظرفیت/تقاضای متفاوت هرکدام) هرکدام سیکل خودشان
+    را بگیرند — نه یک سیکل وارداتی از زمینهٔ دیگر."""
+    n_phases = 2
+    L = L_per_phase * n_phases
+    y_a = q_a / cap_a if cap_a > 0 else 0.0
+    y_b = q_b / cap_b if cap_b > 0 else 0.0
+    Y = y_a + y_b
+    saturated = Y >= 0.95
+    if Y < 0.95:
+        c0 = (1.5 * L + 5) / (1 - Y)
+    else:
+        c0 = bounds["max"]
+
+    c0_clamped = min(max(c0, bounds["min"]), bounds["max"])
+    clamped = abs(c0_clamped - c0) > 1e-6
+
+    g_total = c0_clamped - L
+    g_a = max(g_total * (y_a / Y), min_green_s) if Y > 0 else g_total / 2
+    g_b = max(g_total - g_a, min_green_s)
+
+    return {
+        "y_a": round(y_a, 4), "y_b": round(y_b, 4), "Y": round(Y, 4),
+        "saturated": saturated,
+        "cycle_raw": round(c0, 1), "cycle_clamped": clamped, "cycle_final": round(c0_clamped, 1),
+        "green_a": round(g_a, 1), "green_b": round(g_b, 1), "lost_time_total": L,
+    }
+
+
 def webster(assumptions: dict) -> dict:
     sd = assumptions["signal_design_S1"]
     demand = assumptions["demand_baseline_phase1"]
@@ -53,34 +86,21 @@ def webster(assumptions: dict) -> dict:
     lam = sd["design_demand_lambda"]["value"]
     bounds = sd["cycle_length_bounds"]["value"]
 
-    n_phases = 2
-    L = L_per_phase * n_phases
-
     # فاز A: عبوری همسطح شمال-جنوب (بلوار سیدی زیر پل)
     q_a = (demand["entry_volume_north"]["value"] + demand["entry_volume_south"]["value"]) * lam
     cap_a = s * underpass_lanes
-    y_a = q_a / cap_a
 
     # فاز B: حرکات گردشی از عرشهٔ پل (شرق+غرب) که وارد زیرپل می‌شوند (سهم چپ+راست
     # از ترکیب گردش پایه؛ عبوری مستقیم روی خود عرشه می‌ماند و وارد این تعارض نمی‌شود)
     turning_share = (turns["left"] + turns["right"]) / 100.0
     q_b = (demand["entry_volume_west"]["value"] + demand["entry_volume_east"]["value"]) * lam * turning_share
     cap_b = s * ramp_lanes
-    y_b = q_b / cap_b
 
-    Y = y_a + y_b
-    saturated = Y >= 0.95
-    if Y < 0.95:
-        c0 = (1.5 * L + 5) / (1 - Y)
-    else:
-        c0 = bounds["max"]  # نمی‌توان بهینه محاسبه کرد؛ به سقف مهندسی برمی‌گردیم
-
-    c0_clamped = min(max(c0, bounds["min"]), bounds["max"])
-    clamped = abs(c0_clamped - c0) > 1e-6
-
-    g_total = c0_clamped - L
-    g_a = max(g_total * (y_a / Y), 5.0) if Y > 0 else g_total / 2
-    g_b = max(g_total - g_a, 5.0)
+    r = compute_cycle(q_a, cap_a, q_b, cap_b, L_per_phase, bounds)
+    y_a, y_b, Y = r["y_a"], r["y_b"], r["Y"]
+    saturated = r["saturated"]
+    c0, c0_clamped, clamped = r["cycle_raw"], r["cycle_final"], r["cycle_clamped"]
+    g_a, g_b, L = r["green_a"], r["green_b"], r["lost_time_total"]
 
     return {
         "method": "webster",

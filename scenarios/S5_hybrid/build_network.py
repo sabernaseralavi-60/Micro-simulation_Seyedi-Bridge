@@ -192,11 +192,17 @@ def build_metering(s3, cycle_time: int | None = 20, out_name: str = "seyedi_S5_m
 
 
 def _build_bypass_variant(s3, *, plain_name: str, out_name: str, bypass_priority: int,
-                           unconditional: bool, bypass_junction_radius: float = 10.0) -> pathlib.Path:
+                           unconditional: bool, bypass_junction_radius: float = 10.0,
+                           signalize: bool = False, signal_cycle_s: float | None = None
+                           ) -> pathlib.Path:
     """هستهٔ مشترک ساخت بای‌پس شمال-جنوب، با اولویت و نوع حق‌تقدم قابل‌پارامتر —
-    تا `build_oneway_priority` (حق‌تقدم بدون قیدوشرط) و `build_oneway_yield`
-    (حق‌تقدم عادی/میانه، بدون pass، رجوع به بخش ۱۲ گزارش) یک پیاده‌سازی را
-    به‌اشتراک بگذارند، نه دو کپی مجزا."""
+    تا `build_oneway_priority` (حق‌تقدم بدون قیدوشرط)، `build_oneway_yield`
+    (حق‌تقدم عادی/میانه، بدون pass، رجوع به بخش ۱۲ گزارش) و `build_oneway_signal`
+    (چراغ راهنمایی واقعی، رجوع به assumptions.yml -> signal_design_S5_bypass)
+    یک پیاده‌سازی را به‌اشتراک بگذارند، نه سه کپی مجزا. با signalize=True،
+    اولویت/pass دیگر معنایی ندارند (چراغ خودش تعارض را حل می‌کند) — به‌جای
+    آن‌ها گرهٔ S بازتایپ و با همان روش دوپاسی src/10_signal_design.py
+    (رجوع به scenarios/S1_signal/build_network.py) بازطراحی می‌شود."""
     plain_prefix = SCEN_DIR / "plain" / plain_name
     nod_tree, edg_tree, con_tree, coords = build_ring_plain(s3, plain_prefix)
 
@@ -212,6 +218,9 @@ def _build_bypass_variant(s3, *, plain_name: str, out_name: str, bypass_priority
     for n in nod_root.findall("node"):
         if n.get("id") == s_id:
             n.set("radius", str(bypass_junction_radius))
+            if signalize:
+                n.set("type", "traffic_light")
+                n.set("tl", s_id)
     nod_tree.write(nod_path, encoding="UTF-8", xml_declaration=True)
 
     def add_bypass(eid, frm_key, to_key):
@@ -252,20 +261,98 @@ def _build_bypass_variant(s3, *, plain_name: str, out_name: str, bypass_priority
     net_dir = SCEN_DIR / "network"
     net_dir.mkdir(parents=True, exist_ok=True)
     out_net = net_dir / out_name
+    nod_path_final = plain_prefix.with_suffix(".nod.xml")
+    tll_path = plain_prefix.with_suffix(".tll.xml")
+
+    if not signalize:
+        netconvert = SUMO_HOME / "bin" / "netconvert.exe"
+        cmd = [
+            str(netconvert),
+            "--node-files", str(nod_path_final),
+            "--edge-files", str(edg_path),
+            "--connection-files", str(con_path),
+            "--tllogic-files", str(tll_path),
+            "--type-files", str(TYPEMAP),
+            "--output-file", str(out_net),
+            "--no-turnarounds", "true",
+        ]
+        print("[run]", " ".join(cmd))
+        subprocess.run(cmd, check=True)
+        print(f"[ok] نوشته شد: {out_net}")
+        return out_net
+
+    # ---- مسیر signalize=True: ساخت دوپاسی، عیناً با روش S1 ----
+    import importlib.util
+    import tempfile
+    import yaml
+
+    spec = importlib.util.spec_from_file_location(
+        "signal_design", ROOT / "src" / "10_signal_design.py")
+    sd = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(sd)
+
+    with open(ROOT / "config" / "assumptions.yml", "r", encoding="utf-8") as f:
+        a = yaml.safe_load(f)
+    s1 = a["signal_design_S1"]
+    yellow_s = s1["yellow_time_s"]["value"]
+    clearance_speed = s1["clearance_speed_mps"]["value"]
+    all_red_bounds = (s1["all_red_bounds_s"]["value"]["min"], s1["all_red_bounds_s"]["value"]["max"])
+    min_green_s = 5.0
+
+    cycle_s = signal_cycle_s
+    node_ids = [s_id]
+
     netconvert = SUMO_HOME / "bin" / "netconvert.exe"
-    cmd = [
-        str(netconvert),
-        "--node-files", str(plain_prefix.with_suffix(".nod.xml")),
-        "--edge-files", str(edg_path),
-        "--connection-files", str(con_path),
-        "--tllogic-files", str(plain_prefix.with_suffix(".tll.xml")),
-        "--type-files", str(TYPEMAP),
-        "--output-file", str(out_net),
-        "--no-turnarounds", "true",
-    ]
-    print("[run]", " ".join(cmd))
-    subprocess.run(cmd, check=True)
-    print(f"[ok] نوشته شد: {out_net}")
+
+    def _run(cmd):
+        print("[run]", " ".join(cmd))
+        subprocess.run(cmd, check=True)
+
+    with tempfile.TemporaryDirectory(prefix="s5_signal_auto_") as tmp:
+        auto_net = pathlib.Path(tmp) / "auto.net.xml"
+        _run([
+            str(netconvert),
+            "--node-files", str(nod_path_final),
+            "--edge-files", str(edg_path),
+            "--connection-files", str(con_path),
+            "--tllogic-files", str(tll_path),
+            "--type-files", str(TYPEMAP),
+            "--output-file", str(auto_net),
+            "--no-turnarounds", "true",
+            "--tls.default-type", "static",
+            "--tls.cycle.time", str(int(round(cycle_s))),
+        ])
+
+        programs, clearance_m = sd.harvest_auto_program(auto_net, node_ids)
+        node_programs = {}
+        for nid in node_ids:
+            res = sd.design_fixed_program(
+                programs[nid], clearance_m[nid], cycle_s, yellow_s,
+                clearance_speed, min_green_s, all_red_bounds)
+            if res is None:
+                print(f"[warn] گرهٔ {nid}: تعارض واقعی یافت نشد — چراغ لازم نیست")
+                continue
+            phases, all_red_used = res
+            node_programs[nid] = (phases, "static")
+            print(f"    گرهٔ {nid}: همه‌قرمز={all_red_used:.2f}s "
+                  f"(از طول لاین داخلی {clearance_m[nid]:.1f}m / {clearance_speed}m/s)")
+
+        final_tll = plain_prefix.parent / f"{plain_name}_signal.tll.xml"
+        shutil.copy(tll_path, final_tll)
+        sd.write_tll_override(final_tll, node_programs)
+
+        _run([
+            str(netconvert),
+            "--node-files", str(nod_path_final),
+            "--edge-files", str(edg_path),
+            "--connection-files", str(con_path),
+            "--tllogic-files", str(final_tll),
+            "--type-files", str(TYPEMAP),
+            "--output-file", str(out_net),
+            "--no-turnarounds", "true",
+            "--tls.default-type", "static",
+        ])
+    print(f"[ok] نوشته شد: {out_net} (چراغ واقعی، سیکل هدف وبستر={cycle_s}s)")
     return out_net
 
 
@@ -313,6 +400,61 @@ def build_oneway_yield(s3, bypass_junction_radius: float = 10.0) -> pathlib.Path
         bypass_priority=30, unconditional=False, bypass_junction_radius=bypass_junction_radius)
 
 
+def _bypass_webster_cycle() -> float:
+    """سیکل وبستر مخصوص گرهٔ کوچک بای‌پس (نه سیکل ۴۱.۹ثانیه‌ای S1) — طبق
+    assumptions.yml -> signal_design_S5_bypass: بای‌پس (کران بالا، محافظه‌کارانه)
+    در برابر تقاضای گردشیِ سهم‌دار (۱/۴ از q_phase_B وبستر S1، چون حلقه ۴ پا
+    دارد)، هرکدام با ظرفیت تک‌خطه."""
+    import importlib.util
+    import yaml
+
+    spec = importlib.util.spec_from_file_location(
+        "webster_timing", ROOT / "src" / "08_webster_timing.py")
+    wt = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(wt)
+
+    with open(ROOT / "config" / "assumptions.yml", "r", encoding="utf-8") as f:
+        a = yaml.safe_load(f)
+    s1 = a["signal_design_S1"]
+    s5 = a["signal_design_S5_bypass"]
+    demand = a["demand_baseline_phase1"]
+    turns = a["traffic_control"]["turn_ratio_baseline"]["value"]
+
+    s = s1["saturation_flow_per_lane"]["value"]
+    L_per_phase = s1["lost_time_per_phase"]["value"]
+    lam = s1["design_demand_lambda"]["value"]
+    bounds = s5["cycle_length_bounds"]["value"]
+
+    bypass_share = s5["bypass_demand_share"]["value"]
+    ring_share = s5["ring_tap_demand_share"]["value"]
+    bypass_lanes = s5["bypass_lanes"]["value"]
+    ring_lanes = s5["ring_tap_lanes"]["value"]
+
+    q_bypass = (demand["entry_volume_north"]["value"] + demand["entry_volume_south"]["value"]) * lam * bypass_share
+    turning_share = (turns["left"] + turns["right"]) / 100.0
+    q_ring = (demand["entry_volume_west"]["value"] + demand["entry_volume_east"]["value"]) * lam * turning_share * ring_share
+
+    r = wt.compute_cycle(q_bypass, s * bypass_lanes, q_ring, s * ring_lanes, L_per_phase, bounds)
+    print(f"[ok] سیکل وبستر گرهٔ بای‌پس: Y={r['Y']} → C={r['cycle_final']}s "
+          f"(q_bypass={q_bypass:.0f}, q_ring={q_ring:.0f} veh/h)")
+    return r["cycle_final"]
+
+
+def build_oneway_signal(s3, bypass_junction_radius: float = 10.0) -> pathlib.Path:
+    """تلاش سوم برای گرهٔ تعارض بای‌پس (نشست جاری): پس از دو رفع ناموفق
+    (شعاع هندسی در build_oneway_priority، سپس کاهش اولویت در
+    build_oneway_yield — رجوع به هر دو docstring و بخش ۷ گزارش، مکانیزم ۵)،
+    این نسخه یک **چراغ راهنمایی واقعی** روی گرهٔ S می‌گذارد: طراحی‌شده با
+    همان روش وبستر + سبز وزن‌دار + همه‌قرمز هندسی‌واقعی
+    (src/10_signal_design.py) که S1 هم استفاده کرد — نه صرفاً یک برنامهٔ
+    خودکار netconvert. رجوع به assumptions.yml -> signal_design_S5_bypass."""
+    cycle_s = _bypass_webster_cycle()
+    return _build_bypass_variant(
+        s3, plain_name="seyedi_s5_oneway_signal", out_name="seyedi_S5_oneway_signal.net.xml",
+        bypass_priority=50, unconditional=False, bypass_junction_radius=bypass_junction_radius,
+        signalize=True, signal_cycle_s=cycle_s)
+
+
 def main() -> None:
     fix_console_encoding()
     s3 = _load_s3_module()
@@ -330,6 +472,9 @@ def main() -> None:
     # آزمون کنترل فعال (نشست ۵، بخش ۱۲ گزارش): بای‌پس با حق‌تقدم عادی
     # به‌جای بدون‌قیدوشرط — رجوع به docstring build_oneway_yield بالا.
     build_oneway_yield(s3)
+    # تلاش سوم (نشست جاری): چراغ راهنمایی واقعی روی گرهٔ بای‌پس — رجوع به
+    # docstring build_oneway_signal بالا.
+    build_oneway_signal(s3)
 
 
 if __name__ == "__main__":
