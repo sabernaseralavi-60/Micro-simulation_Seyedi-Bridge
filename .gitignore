@@ -8,6 +8,7 @@ __pycache__/
 out/
 outputs/logs/*.xml
 scenarios/**/out/
+scenarios/_diagnostics/
 scenarios/**/*.xml
 !scenarios/**/*.rou.xml
 !scenarios/**/*.sumocfg

@@ -45,14 +45,27 @@ scenarios:
         table_prefix: "s1_actuated"
 
   S2_rcut:
-    label_fa: "محدودسازی گردش‌ها + دوربرگردان (RCUT/Median U-Turn)"
-    label_en: "Restricted Crossing U-Turn / Median U-Turn"
-    status: planned
+    label_fa: "محدودسازی گردش‌ها (نسخهٔ ۱: حذف گردش چپ زیر پل)"
+    label_en: "Restricted Crossing U-Turn / Median U-Turn — v1 (left-turn removal only)"
+    status: built
     design_note: >
-      گردش چپ زیر پل حذف می‌شود؛ خودروها مستقیم/راست می‌روند و در دوربرگردانی
-      دور از مرکز پل (قید صریح کاربر: سرعت بالای عرشه) U-turn می‌زنند. فاصلهٔ
-      دوربرگردان از مرکز به‌عنوان متغیر حساسیت با سه سطح ۱۵۰/۲۵۰/۳۵۰ متر آزموده
-      می‌شود (رجوع به README این سناریو برای محاسبهٔ طول تشخیص+واکنش+کاهش‌سرعت+بافت).
+      نسخهٔ ۱: هر ۵ اتصال گردش چپ واقعی زیر پل (شناسایی‌شده با تحلیل زاویه/
+      بردار در نقاط انشعاب) از plain-XML حذف شده‌اند. ساخت فیزیکی دوربرگردان
+      میانهٔ عرشه (median U-turn) و حساسیت به فاصلهٔ ۱۵۰/۲۵۰/۳۵۰ متر هنوز
+      پیاده‌سازی نشده — رجوع به scenarios/S2_rcut/README.md برای مرز دقیق این
+      نسخه و نقشهٔ راه نسخهٔ ۲.
+    demand_blocked_edges:
+      - "643263251"
+      - "713864643"
+      - "627633586"
+      - "643263250"
+      - "683662933"
+    control_variants:
+      default:
+        label_fa: "حذف گردش چپ (بدون کنترل فعال دیگر)"
+        net_file: "scenarios/S2_rcut/network/seyedi_S2.net.xml"
+        out_dir: "scenarios/S2_rcut/out"
+        table_prefix: "s2"
 
   S3_roundabout:
     label_fa: "میدان مدرن/توربو"
@@ -68,11 +81,19 @@ scenarios:
   S4_channelization:
     label_fa: "کانالیزاسیون + گردش راست آزاد"
     label_en: "Channelization + free right-turn"
-    status: planned
+    status: built
     design_note: >
-      جزیره‌سازی و خط گردش راست جداشده در هر دو دهانهٔ باز؛ حذف پارک حاشیه‌ای
-      در ۵۰ متر منتهی به تقاطع. کمترین تغییر توپولوژیک از میان سناریوها —
-      قابل‌پیاده‌سازی با پچ plain-XML مشابه فاز ۲ (بدون نیاز به گره‌های جدید).
+      هر ۵ گرهٔ ادغام واقعی زیر پل از zipper به priority بازگردانده شده‌اند؛
+      اتصال عبوریِ اصلی هر گره pass="true" گرفته (حق‌تقدم بدون قیدوشرط، طبق
+      قرارداد متعارف مسیر اصلی)، گردش راست کانالیزه‌شده minor/yield شفاف
+      می‌ماند (به‌جای مذاکرهٔ مبهم zipper قبلی). حذف پارک حاشیه‌ای در مدل پایه
+      اصلاً لحاظ نشده بود، پس اثر شبکه‌ای ندارد (فقط یادداشت کیفی).
+    control_variants:
+      default:
+        label_fa: "کانالیزاسیون گردش راست (۵ نقطهٔ تعارض واقعی)"
+        net_file: "scenarios/S4_channelization/network/seyedi_S4.net.xml"
+        out_dir: "scenarios/S4_channelization/out"
+        table_prefix: "s4"
 
   S5_hybrid:
     label_fa: "ترکیبی/خلاقانه (حداقل دو گزینهٔ ابتکاری)"

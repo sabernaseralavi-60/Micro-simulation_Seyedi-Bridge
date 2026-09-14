@@ -49,10 +49,15 @@ def _load_demand_module():
 
 
 def run_one(build_demand, assumptions, vcfg, *, net_file: pathlib.Path, lambda_scale: float,
-            seed: int, out_dir: pathlib.Path, skip_if_done: bool = True) -> bool:
+            seed: int, out_dir: pathlib.Path, skip_if_done: bool = True,
+            blocked_edges: frozenset = frozenset()) -> bool:
     """اجرای یک ترکیب (شبکه, λ, seed). اگر skip_if_done و tripinfo.xml از قبل
     موجود باشد، دوباره اجرا نمی‌کند (اجرای resume-پذیر برای پایپ‌لاین‌های
-    بزرگ چندسناریویی) — بازمی‌گرداند: True اگر واقعاً اجرا شد، False اگر رد شد."""
+    بزرگ چندسناریویی) — بازمی‌گرداند: True اگر واقعاً اجرا شد، False اگر رد شد.
+
+    نکتهٔ حیاتی: تقاضا همیشه روی *همان* net_file این اجرا تولید می‌شود (نه
+    شبکهٔ مبنای S0) — وگرنه برای سناریوهایی که اتصالی حذف/اضافه کرده‌اند
+    (مثل S2)، jtrrouter مسیرهایی می‌سازد که با توپولوژی واقعی سازگار نیست."""
     out_dir.mkdir(parents=True, exist_ok=True)
     if skip_if_done and (out_dir / "tripinfo.xml").exists():
         return False
@@ -61,6 +66,7 @@ def run_one(build_demand, assumptions, vcfg, *, net_file: pathlib.Path, lambda_s
     build_demand.generate_demand(
         assumptions, vcfg,
         lambda_scale=lambda_scale, seed=seed,
+        net_file=net_file, blocked_edges=blocked_edges,
         routes_path=routes_path,
     )
 
@@ -103,20 +109,21 @@ def main() -> None:
     n_seeds = assumptions["experiment_design"]["n_seeds_per_condition"]["value"]
     build_demand = _load_demand_module()
 
-    jobs = []  # (label, net_file, out_dir)
+    jobs = []  # (label, net_file, out_dir, blocked_edges)
     for scen_id, scen in scen_cfg.items():
         if scen.get("status") != "built":
             continue
+        blocked = frozenset(scen.get("demand_blocked_edges", []))
         for variant_id, variant in scen["control_variants"].items():
             label = f"{scen_id}/{variant_id}"
             net_file = ROOT / variant["net_file"]
             out_dir = ROOT / variant["out_dir"]
-            jobs.append((label, net_file, out_dir))
+            jobs.append((label, net_file, out_dir, blocked))
 
     total = len(jobs) * len(lambdas) * n_seeds
     done = 0
     t0 = time.time()
-    for label, net_file, out_root in jobs:
+    for label, net_file, out_root, blocked in jobs:
         if not net_file.exists():
             raise FileNotFoundError(f"شبکهٔ {label} یافت نشد: {net_file} — ابتدا اسکریپت ساخت "
                                      f"شبکهٔ آن سناریو را اجرا کن.")
@@ -124,7 +131,8 @@ def main() -> None:
             for seed in range(1, n_seeds + 1):
                 out_dir = out_root / f"lambda_{lam}" / f"seed_{seed}"
                 ran = run_one(build_demand, assumptions, vcfg, net_file=net_file,
-                              lambda_scale=lam, seed=seed, out_dir=out_dir)
+                              lambda_scale=lam, seed=seed, out_dir=out_dir,
+                              blocked_edges=blocked)
                 done += 1
                 tag = "done" if ran else "skip (exists)"
                 print(f"[{done}/{total}] {label} lambda={lam} seed={seed} {tag} "

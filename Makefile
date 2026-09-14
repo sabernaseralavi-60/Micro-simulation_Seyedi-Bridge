@@ -13,9 +13,9 @@ export SUMO_HOME := $(SUMO_HOME_DIR)
 export PYTHONIOENCODING := utf-8
 export QUARTO_PYTHON := $(CURDIR)/$(PYTHON)
 
-.PHONY: all check-env sketch network patch-geometry demand webster-timing scenario-s1 run analyze statistics figures report publish clean
+.PHONY: all check-env sketch network patch-geometry demand webster-timing scenario-s1 scenario-s2 scenario-s4 run analyze statistics behavior-diagnostic figures report publish clean
 
-all: check-env sketch network patch-geometry demand webster-timing scenario-s1 run analyze statistics figures report
+all: check-env sketch network patch-geometry demand webster-timing scenario-s1 scenario-s2 scenario-s4 run analyze statistics figures report
 
 ## بررسی نصب‌بودن ابزارهای لازم (فاز ۰، گام ۱)
 check-env:
@@ -54,6 +54,14 @@ webster-timing:
 scenario-s1: webster-timing
 	$(PYTHON) scenarios/S1_signal/build_network.py
 
+## فاز ۴: ساخت شبکهٔ S2 (نسخهٔ ۱: حذف گردش چپ زیر پل)
+scenario-s2:
+	$(PYTHON) scenarios/S2_rcut/build_network.py
+
+## فاز ۴: ساخت شبکهٔ S4 (کانالیزاسیون + گردش راست آزاد)
+scenario-s4:
+	$(PYTHON) scenarios/S4_channelization/build_network.py
+
 ## فاز ۳-۴: اجرای همهٔ سناریوهای built (S0 + S1×۲) در ۵ سطح λ × ۱۰ seed
 run:
 	$(PYTHON) src/04_run_experiments.py
@@ -65,6 +73,10 @@ analyze:
 ## فاز ۴: مقایسهٔ زوجی سناریوها روی seedهای مشترک (آزمون معنی‌داری + اندازهٔ اثر)
 statistics:
 	$(PYTHON) src/06_statistics.py
+
+## فاز ۴: آزمون تشخیصی — S0/S1 با پارامترهای رفتاری پیش‌فرض SUMO (نه تهاجمی) تا سهم رفتار از سهم چراغ جدا شود
+behavior-diagnostic:
+	$(PYTHON) src/09_behavior_diagnostic.py
 
 ## فاز ۳: نمودار KPI به تفکیک پا + نمودار حساسیت به λ
 figures:

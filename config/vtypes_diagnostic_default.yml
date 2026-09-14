@@ -1,0 +1,119 @@
+# فاز ۴ — پروندهٔ **تشخیصی** (diagnostic)، نه بخشی از خط لولهٔ رسمی سناریوها.
+#
+# هدف: جدا کردن سهم «اثر خودِ چراغ» از «اثر رفتار تهاجمی کالیبره‌نشدهٔ ناوگان»
+# در یافتهٔ فاز ۴ (S1 بدتر از S0 در تأخیر و برخورد). این فایل دقیقاً همان
+# ساختار config/vtypes.yml را دارد (همان سهم ناوگان، همان vClass/طول/عرض/
+# سرعت هر رده) اما تمام پارامترهای «تهاجمی‌تر از پیش‌فرض SUMO» را به مقدار
+# **پیش‌فرض واقعی SUMO** برمی‌گرداند (tau=1.0 پیش‌فرض SUMO برای سواری، sigma
+# پیش‌فرض ۰.۵، minGap پیش‌فرض ۲.۵، impatience پیش‌فرض ۰.۰، jmIgnoreFoeProb
+# پیش‌فرض ۰.۰، lcAssertive پیش‌فرض ۱.۰) — طبق نوع وسیله با مقیاس‌های نسبی
+# مشابه اصل حفظ شده (مثلاً موتورسیکلت هنوز کمی چابک‌تر از اتوبوس، اما دیگر
+# «تهاجمی» نیست).
+#
+# مدل sublane عمداً فعال باقی می‌ماند (این بخشی از واقعیت فیزیکی موتورسیکلت
+# است، نه یک انتخاب «تهاجمی‌بودن»)؛ فقط پارامترهای صراحتاً ثبت‌شده در
+# assumptions.yml -> fleet_and_behavior به‌عنوان «بالاتر از پیش‌فرض» ریست
+# شده‌اند. رجوع به src/09_behavior_diagnostic.py و report/report-fa.qmd بخش
+# «آزمون تشخیصی حساسیت رفتاری».
+
+fleet_composition:
+  passenger: {share: 0.55, vclass: passenger, source: engineering_judgement}
+  motorcycle: {share: 0.30, vclass: motorcycle, source: engineering_judgement}
+  taxi: {share: 0.08, vclass: taxi, source: engineering_judgement}
+  pickup: {share: 0.04, vclass: delivery, source: engineering_judgement}
+  bus: {share: 0.01, vclass: bus, source: engineering_judgement}
+  truck_light: {share: 0.02, vclass: truck, source: engineering_judgement}
+
+vtypes:
+  passenger:
+    vClass: passenger
+    length: 4.5
+    width: 1.8
+    maxSpeed: 41.7
+    accel: 2.6
+    decel: 4.5
+    sigma: 0.5
+    tau: 1.0
+    minGap: 2.5
+    impatience: 0.0
+    jmIgnoreFoeProb: 0.0
+    lcAssertive: 1.0
+    lcSpeedGain: 1.0
+  motorcycle:
+    vClass: motorcycle
+    length: 2.0
+    width: 0.8
+    maxSpeed: 36.1
+    accel: 3.5
+    decel: 5.0
+    sigma: 0.5
+    tau: 1.0
+    minGap: 2.5
+    impatience: 0.0
+    jmIgnoreFoeProb: 0.0
+    lcAssertive: 1.0
+    lcSpeedGain: 1.0
+    lcSublane: 1.0
+    latAlignment: "arbitrary"
+  taxi:
+    vClass: taxi
+    length: 4.5
+    width: 1.8
+    maxSpeed: 41.7
+    accel: 2.8
+    decel: 4.8
+    sigma: 0.5
+    tau: 1.0
+    minGap: 2.5
+    impatience: 0.0
+    jmIgnoreFoeProb: 0.0
+    lcAssertive: 1.0
+    lcSpeedGain: 1.0
+  pickup:
+    vClass: delivery
+    length: 5.0
+    width: 1.9
+    maxSpeed: 33.3
+    accel: 2.2
+    decel: 4.2
+    sigma: 0.5
+    tau: 1.0
+    minGap: 2.5
+    impatience: 0.0
+    jmIgnoreFoeProb: 0.0
+    lcAssertive: 1.0
+  bus:
+    vClass: bus
+    length: 12.0
+    width: 2.55
+    maxSpeed: 25.0
+    accel: 1.2
+    decel: 3.5
+    sigma: 0.5
+    tau: 1.0
+    minGap: 2.5
+    impatience: 0.0
+    jmIgnoreFoeProb: 0.0
+    lcAssertive: 1.0
+  truck_light:
+    vClass: truck
+    length: 7.0
+    width: 2.3
+    maxSpeed: 27.8
+    accel: 1.5
+    decel: 3.8
+    sigma: 0.5
+    tau: 1.0
+    minGap: 2.5
+    impatience: 0.0
+    jmIgnoreFoeProb: 0.0
+    lcAssertive: 1.0
+
+sublane:
+  enabled: true
+  lateral_resolution: 0.8
+  source: engineering_judgement
+  note: "مدل sublane همچنان فعال است — این یک انتخاب رفتار «تهاجمی» نیست، بلکه
+    بازنمایی فیزیکی امکان فیلترینگ موتورسیکلت است. فقط پارامترهای رفتاری
+    (tau/sigma/minGap/impatience/jmIgnoreFoeProb/lcAssertive) به پیش‌فرض SUMO
+    برگردانده شده‌اند."

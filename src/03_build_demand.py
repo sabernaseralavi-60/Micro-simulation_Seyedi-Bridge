@@ -87,7 +87,11 @@ def first_branch_edge(entry_edge):
     return edge, []
 
 
-def build_turns(net, ratios: dict) -> str:
+def build_turns(net, ratios: dict, blocked_edges: frozenset = frozenset()) -> str:
+    """blocked_edges: شناسهٔ یال‌های خروجی که در شبکهٔ این سناریو دیگر واقعاً
+    متصل نیستند (مثلاً S2 که اتصال گردش چپ را از plain-XML حذف کرده) — این
+    گزینه‌ها باید کاملاً از فهرست کلاسه‌بندی‌شده حذف شوند، نه فقط وزن صفر
+    بگیرند، وگرنه jtrrouter روی یک toEdge نامعتبر خطا می‌دهد."""
     lines = ['<?xml version="1.0" encoding="UTF-8"?>',
              '<turns xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '
              'xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/turns_file.xsd">',
@@ -100,9 +104,13 @@ def build_turns(net, ratios: dict) -> str:
         in_bear = bearing(branch_edge.getShape()[0], branch_edge.getShape()[-1])
         classified = []
         for out in outs:
+            if out.getID() in blocked_edges:
+                continue
             out_bear = bearing(out.getShape()[0], out.getShape()[-1])
             cls = classify(out_bear - in_bear)
             classified.append((out, cls))
+        if not classified:
+            continue
 
         # اگر uturn هم در گزینه‌ها بود، عملاً حذفش می‌کنیم (نامعتبر برای ترافیک عادی)
         classified = [(o, c) for o, c in classified if c != "u_turn"] or classified
@@ -185,11 +193,11 @@ def build_flows_xml(assumptions: dict, vcfg: dict, lambda_scale: float = 1.0,
 
 
 def run_jtrrouter(flows_path: pathlib.Path, turns_path: pathlib.Path,
-                   routes_path: pathlib.Path, seed: int) -> None:
+                   routes_path: pathlib.Path, seed: int, net_file: pathlib.Path = NET_FILE) -> None:
     jtrrouter = SUMO_HOME / "bin" / "jtrrouter.exe"
     cmd = [
         str(jtrrouter),
-        "-n", str(NET_FILE),
+        "-n", str(net_file),
         "-r", str(flows_path),
         "-t", str(turns_path),
         "-o", str(routes_path),
@@ -205,10 +213,19 @@ def generate_demand(assumptions: dict, vcfg: dict, *, lambda_scale: float = 1.0,
                      seed: int = 42, left_turn_share: float | None = None,
                      motorcycle_share: float | None = None,
                      tau_multiplier: float = 1.0,
+                     net_file: pathlib.Path = NET_FILE,
+                     blocked_edges: frozenset = frozenset(),
                      flows_path: pathlib.Path = FLOWS_FILE,
                      turns_path: pathlib.Path = TURNS_FILE,
                      routes_path: pathlib.Path = ROUTES_FILE) -> None:
-    """تابع اصلی قابل‌فراخوانی از رانر فاز ۳ (چند-λ/چند-seed/حساسیت)."""
+    """تابع اصلی قابل‌فراخوانی از رانر فاز ۳-۴ (چند-λ/چند-seed/چند-سناریو).
+
+    نکتهٔ مهم: `net_file` باید همیشه دقیقاً همان شبکه‌ای باشد که SUMO با آن
+    اجرا می‌شود — در غیر این صورت jtrrouter مسیرهایی می‌سازد که با توپولوژی
+    واقعی شبیه‌سازی (مثلاً پس از حذف/افزودن اتصال در یک سناریو) سازگار
+    نیستند. `blocked_edges` برای سناریوهایی مثل S2 است که اتصالی را از
+    plain-XML حذف کرده‌اند — همان یال‌های خروجیِ حذف‌شده باید اینجا هم اعلام
+    شوند تا build_turns() هرگز برایشان درصدی ننویسد."""
     ratios_cfg = assumptions["traffic_control"]["turn_ratio_baseline"]["value"]
     if left_turn_share is None:
         ratios = {"through": ratios_cfg["through"], "right": ratios_cfg["right"], "left": ratios_cfg["left"]}
@@ -225,11 +242,11 @@ def generate_demand(assumptions: dict, vcfg: dict, *, lambda_scale: float = 1.0,
                                  motorcycle_share=motorcycle_share, tau_multiplier=tau_multiplier)
     flows_path.write_text(flows_xml, encoding="utf-8")
 
-    net = sumolib.net.readNet(str(NET_FILE))
-    turns_xml = build_turns(net, ratios)
+    net = sumolib.net.readNet(str(net_file))
+    turns_xml = build_turns(net, ratios, blocked_edges=blocked_edges)
     turns_path.write_text(turns_xml, encoding="utf-8")
 
-    run_jtrrouter(flows_path, turns_path, routes_path, seed)
+    run_jtrrouter(flows_path, turns_path, routes_path, seed, net_file=net_file)
 
 
 def parse_args():
