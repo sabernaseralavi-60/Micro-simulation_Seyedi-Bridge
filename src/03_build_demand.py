@@ -87,11 +87,17 @@ def first_branch_edge(entry_edge):
     return edge, []
 
 
-def build_turns(net, ratios: dict, blocked_edges: frozenset = frozenset()) -> str:
+def build_turns(net, ratios: dict, blocked_edges: frozenset = frozenset(),
+                 extra_turn_rules: tuple = ()) -> str:
     """blocked_edges: شناسهٔ یال‌های خروجی که در شبکهٔ این سناریو دیگر واقعاً
     متصل نیستند (مثلاً S2 که اتصال گردش چپ را از plain-XML حذف کرده) — این
     گزینه‌ها باید کاملاً از فهرست کلاسه‌بندی‌شده حذف شوند، نه فقط وزن صفر
-    بگیرند، وگرنه jtrrouter روی یک toEdge نامعتبر خطا می‌دهد."""
+    بگیرند، وگرنه jtrrouter روی یک toEdge نامعتبر خطا می‌دهد.
+
+    extra_turn_rules: قواعد گردش دستیِ اضافی، فراتر از منطق خودکار
+    ورودی+انشعابِ اول (مثلاً S2 نسخهٔ ۲ که در نقطهٔ دوربرگردان میانهٔ عرشه —
+    یک گرهٔ میان‌مسیر، نه یک ورودی شبکه — باید سهم مشخصی از ترافیک عبوری را
+    به‌جای عبور، دوربرگردان بزند). هر آیتم: (from_edge_id, [(to_edge_id, weight), ...])."""
     lines = ['<?xml version="1.0" encoding="UTF-8"?>',
              '<turns xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '
              'xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/turns_file.xsd">',
@@ -122,6 +128,14 @@ def build_turns(net, ratios: dict, blocked_edges: frozenset = frozenset()) -> st
             lines.append(f'            <!-- {cls} -->')
             lines.append(f'            <toEdge id="{out.getID()}" probability="{pct:.1f}"/>')
         lines.append('        </fromEdge>')
+
+    for from_edge_id, options in extra_turn_rules:
+        total = sum(w for _, w in options) or 1.0
+        lines.append(f'        <fromEdge id="{from_edge_id}">')
+        for to_edge_id, w in options:
+            lines.append(f'            <toEdge id="{to_edge_id}" probability="{100.0*w/total:.1f}"/>')
+        lines.append('        </fromEdge>')
+
     lines.append('    </interval>')
     lines.append('</turns>')
     return "\n".join(lines)
@@ -215,6 +229,7 @@ def generate_demand(assumptions: dict, vcfg: dict, *, lambda_scale: float = 1.0,
                      tau_multiplier: float = 1.0,
                      net_file: pathlib.Path = NET_FILE,
                      blocked_edges: frozenset = frozenset(),
+                     extra_turn_rules: tuple = (),
                      flows_path: pathlib.Path = FLOWS_FILE,
                      turns_path: pathlib.Path = TURNS_FILE,
                      routes_path: pathlib.Path = ROUTES_FILE) -> None:
@@ -243,7 +258,7 @@ def generate_demand(assumptions: dict, vcfg: dict, *, lambda_scale: float = 1.0,
     flows_path.write_text(flows_xml, encoding="utf-8")
 
     net = sumolib.net.readNet(str(net_file))
-    turns_xml = build_turns(net, ratios, blocked_edges=blocked_edges)
+    turns_xml = build_turns(net, ratios, blocked_edges=blocked_edges, extra_turn_rules=extra_turn_rules)
     turns_path.write_text(turns_xml, encoding="utf-8")
 
     run_jtrrouter(flows_path, turns_path, routes_path, seed, net_file=net_file)

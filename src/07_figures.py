@@ -32,10 +32,19 @@ SCENARIO_LABELS_FA = {
     "s0": "S0 — وضع موجود",
     "s1_fixed": "S1 — چراغ (زمان‌ثابت)",
     "s1_actuated": "S1 — چراغ (actuated)",
+    "s2": "S2 — حذف گردش چپ (D=250m)",
+    "s3_constrained": "S3 — میدان (محدود)",
+    "s3_full": "S3 — میدان (دهانهٔ مرکزی باز)",
+    "s4": "S4 — کانالیزاسیون",
 }
 SCENARIO_COLORS = {
-    "s0": "#54585A", "s1_fixed": "#4C78A8", "s1_actuated": "#F58518",
+    "s0": "#54585A", "s1_fixed": "#4C78A8", "s1_actuated": "#72B7B2",
+    "s2": "#54A24B", "s3_constrained": "#B279A2", "s3_full": "#E45756",
+    "s4": "#F58518",
 }
+# نسخه‌های حساسیت (D150/D350 برای S2) در نمودار اصلی مقایسه شلوغ می‌کنند —
+# فقط در جدول گزارش می‌آیند، نه این نمودار
+FIGURE_EXCLUDE_PREFIXES = {"s2_d150", "s2_d350"}
 
 # پالت کیفی ثابت (ترتیب معنادار: چهار پا + کل) — طبق راهنمای dataviz، هرگز چرخشی نیست
 APPROACH_ORDER = ["west", "east", "north", "south", "کل (all)"]
@@ -130,7 +139,8 @@ def plot_scenario_comparison() -> None:
         if scen.get("status") != "built":
             continue
         for variant in scen["control_variants"].values():
-            prefixes.append(variant["table_prefix"])
+            if variant["table_prefix"] not in FIGURE_EXCLUDE_PREFIXES:
+                prefixes.append(variant["table_prefix"])
 
     frames = []
     for prefix in prefixes:

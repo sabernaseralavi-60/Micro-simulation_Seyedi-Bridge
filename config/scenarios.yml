@@ -45,38 +45,80 @@ scenarios:
         table_prefix: "s1_actuated"
 
   S2_rcut:
-    label_fa: "محدودسازی گردش‌ها (نسخهٔ ۱: حذف گردش چپ زیر پل)"
-    label_en: "Restricted Crossing U-Turn / Median U-Turn — v1 (left-turn removal only)"
+    label_fa: "محدودسازی گردش‌ها + دوربرگردان فیزیکی (RCUT/Median U-Turn)"
+    label_en: "Restricted Crossing U-Turn / Median U-Turn — v2 (physical crossovers)"
     status: built
     design_note: >
-      نسخهٔ ۱: هر ۵ اتصال گردش چپ واقعی زیر پل (شناسایی‌شده با تحلیل زاویه/
-      بردار در نقاط انشعاب) از plain-XML حذف شده‌اند. ساخت فیزیکی دوربرگردان
-      میانهٔ عرشه (median U-turn) و حساسیت به فاصلهٔ ۱۵۰/۲۵۰/۳۵۰ متر هنوز
-      پیاده‌سازی نشده — رجوع به scenarios/S2_rcut/README.md برای مرز دقیق این
-      نسخه و نقشهٔ راه نسخهٔ ۲.
+      نسخهٔ ۲ (کامل): هر ۵ اتصال گردش چپ واقعی زیر پل حذف شده‌اند؛ علاوه‌براین
+      دو یال بلند عرشه (شرق‌گرد ۴۱۰۲۴۷۴۹۲ و غرب‌گرد ۶۲۷۰۰۸۱۹۲) هرکدام با
+      درون‌یابی طول‌کمانی روی شکل واقعی یال در دو نقطه (±D متر از مرکز
+      میدانچهٔ ویوینگ) شکافته و یک یال دوربرگردان کوتاه در هر نقطه افزوده شده
+      (رجوع به scenarios/S2_rcut/build_network.py). طبق CLAUDE.md، D به‌عنوان
+      متغیر حساسیت در سه سطح ۱۵۰/۲۵۰/۳۵۰ متر ساخته شده؛ سناریوی «built»
+      رسمی از D=۲۵۰ (مبنا) استفاده می‌کند؛ ۱۵۰ و ۳۵۰ برای تحلیل حساسیت آماده‌اند
+      (net فایل‌های seyedi_S2_D150.net.xml و seyedi_S2_D350.net.xml).
+      تقاضا با مکانیزم عمومی `demand_extra_turn_rules` در src/03_build_demand.py
+      هدایت می‌شود: در هر نقطهٔ دوربرگردان، سهمی برابر با
+      traffic_control.turn_ratio_baseline.left (۱۵٪) از ترافیک عبوری واقعاً
+      دوربرگردان می‌زند و مسیر «عبور از تقاطع → دوربرگردان → بازگشت →
+      گردش راست» را طی می‌کند — نه فقط بازتوزیع مقصد در سطح تقاضا.
     demand_blocked_edges:
       - "643263251"
       - "713864643"
       - "627633586"
       - "643263250"
       - "683662933"
+    demand_extra_turn_rules:
+      - from: "410247492_mid"
+        options:
+          - {to: "410247492_east", weight: 85}
+          - {to: "s2_uturn_east", weight: 15}
+      - from: "627008192_mid"
+        options:
+          - {to: "627008192_west", weight: 85}
+          - {to: "s2_uturn_west", weight: 15}
     control_variants:
+      d150:
+        label_fa: "دوربرگردان در D=۱۵۰ متر از مرکز (حساسیت)"
+        net_file: "scenarios/S2_rcut/network/seyedi_S2_D150.net.xml"
+        out_dir: "scenarios/S2_rcut/out/D150"
+        table_prefix: "s2_d150"
       default:
-        label_fa: "حذف گردش چپ (بدون کنترل فعال دیگر)"
-        net_file: "scenarios/S2_rcut/network/seyedi_S2.net.xml"
-        out_dir: "scenarios/S2_rcut/out"
+        label_fa: "دوربرگردان در D=۲۵۰ متر از مرکز (مبنا)"
+        net_file: "scenarios/S2_rcut/network/seyedi_S2_D250.net.xml"
+        out_dir: "scenarios/S2_rcut/out/D250"
         table_prefix: "s2"
+      d350:
+        label_fa: "دوربرگردان در D=۳۵۰ متر از مرکز (حساسیت)"
+        net_file: "scenarios/S2_rcut/network/seyedi_S2_D350.net.xml"
+        out_dir: "scenarios/S2_rcut/out/D350"
+        table_prefix: "s2_d350"
 
   S3_roundabout:
-    label_fa: "میدان مدرن/توربو"
-    label_en: "Modern/turbo roundabout"
-    status: planned
+    label_fa: "میدان نامتقارن (دو گزینه: محدود به دهانه‌های باز / با دهانهٔ مرکزی باز)"
+    label_en: "Asymmetric mini-roundabout — constrained (2 open spans) vs. full (center span open)"
+    status: built
     design_note: >
-      امکان‌سنجی مستقیماً محدود به سازهٔ ۷دهانه‌ای پل است (رجوع به
-      assumptions.yml -> bridge_geometry.span_structure) — گردش پیوستهٔ میدان
-      نیازمند بازکردن دهانهٔ مرکزی (مشروط به تأیید مهندس سازه، خارج از حیطهٔ
-      این مطالعه) یا طراحی میدان نامتقارن محدود به دو دهانهٔ باز موجود است؛
-      هر دو گزینه در README این سناریو با هزینه/فایده مقایسه می‌شوند.
+      طبق Checkpoint کاربر (۱۴۰۵/۰۶/۲۳)، هر دو گزینه ساخته شد. یک حلقهٔ
+      گردشی پادساعتگرد ۴یالی میان چهار گرهٔ تلاقی واقعی موجود (شمال/غرب/
+      جنوب/شرق — نزدیک‌ترین گره‌های واقعی به دو دهانهٔ باز) افزوده شده،
+      **بدون حذف** هیچ گره/یال قبلی (کم‌ریسک‌ترین گزینه، چون زیر پل یک گرهٔ
+      تقاطعی واحد برای ادغام کامل ندارد — همان یافتهٔ S1). یال‌های حلقه
+      priority عددی بالا و pass="true" می‌گیرند (حق‌تقدم گردشی بدون قیدوشرط،
+      دقیقاً رفتار واقعی میدان). نسخهٔ full یک وتر مستقیم غرب-شرق اضافه دارد
+      که فرضاً از دهانهٔ مرکزیِ بازشده عبور می‌کند (مشروط به تأیید سازه‌ای،
+      خارج از حیطهٔ این مطالعه). رجوع به scenarios/S3_roundabout/README.md.
+    control_variants:
+      constrained:
+        label_fa: "میدان محدود به دو دهانهٔ باز موجود"
+        net_file: "scenarios/S3_roundabout/network/seyedi_S3_constrained.net.xml"
+        out_dir: "scenarios/S3_roundabout/out/constrained"
+        table_prefix: "s3_constrained"
+      full:
+        label_fa: "میدان کامل با دهانهٔ مرکزی باز (مشروط به تأیید سازه‌ای)"
+        net_file: "scenarios/S3_roundabout/network/seyedi_S3_full.net.xml"
+        out_dir: "scenarios/S3_roundabout/out/full"
+        table_prefix: "s3_full"
 
   S4_channelization:
     label_fa: "کانالیزاسیون + گردش راست آزاد"

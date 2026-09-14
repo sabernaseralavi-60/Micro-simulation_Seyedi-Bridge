@@ -50,7 +50,7 @@ def _load_demand_module():
 
 def run_one(build_demand, assumptions, vcfg, *, net_file: pathlib.Path, lambda_scale: float,
             seed: int, out_dir: pathlib.Path, skip_if_done: bool = True,
-            blocked_edges: frozenset = frozenset()) -> bool:
+            blocked_edges: frozenset = frozenset(), extra_turn_rules: tuple = ()) -> bool:
     """اجرای یک ترکیب (شبکه, λ, seed). اگر skip_if_done و tripinfo.xml از قبل
     موجود باشد، دوباره اجرا نمی‌کند (اجرای resume-پذیر برای پایپ‌لاین‌های
     بزرگ چندسناریویی) — بازمی‌گرداند: True اگر واقعاً اجرا شد، False اگر رد شد.
@@ -66,7 +66,7 @@ def run_one(build_demand, assumptions, vcfg, *, net_file: pathlib.Path, lambda_s
     build_demand.generate_demand(
         assumptions, vcfg,
         lambda_scale=lambda_scale, seed=seed,
-        net_file=net_file, blocked_edges=blocked_edges,
+        net_file=net_file, blocked_edges=blocked_edges, extra_turn_rules=extra_turn_rules,
         routes_path=routes_path,
     )
 
@@ -109,21 +109,29 @@ def main() -> None:
     n_seeds = assumptions["experiment_design"]["n_seeds_per_condition"]["value"]
     build_demand = _load_demand_module()
 
-    jobs = []  # (label, net_file, out_dir, blocked_edges)
+    def parse_extra_turn_rules(scen: dict) -> tuple:
+        rules = scen.get("demand_extra_turn_rules", [])
+        return tuple(
+            (rule["from"], tuple((opt["to"], opt["weight"]) for opt in rule["options"]))
+            for rule in rules
+        )
+
+    jobs = []  # (label, net_file, out_dir, blocked_edges, extra_turn_rules)
     for scen_id, scen in scen_cfg.items():
         if scen.get("status") != "built":
             continue
         blocked = frozenset(scen.get("demand_blocked_edges", []))
+        extra_rules = parse_extra_turn_rules(scen)
         for variant_id, variant in scen["control_variants"].items():
             label = f"{scen_id}/{variant_id}"
             net_file = ROOT / variant["net_file"]
             out_dir = ROOT / variant["out_dir"]
-            jobs.append((label, net_file, out_dir, blocked))
+            jobs.append((label, net_file, out_dir, blocked, extra_rules))
 
     total = len(jobs) * len(lambdas) * n_seeds
     done = 0
     t0 = time.time()
-    for label, net_file, out_root, blocked in jobs:
+    for label, net_file, out_root, blocked, extra_rules in jobs:
         if not net_file.exists():
             raise FileNotFoundError(f"شبکهٔ {label} یافت نشد: {net_file} — ابتدا اسکریپت ساخت "
                                      f"شبکهٔ آن سناریو را اجرا کن.")
@@ -132,7 +140,7 @@ def main() -> None:
                 out_dir = out_root / f"lambda_{lam}" / f"seed_{seed}"
                 ran = run_one(build_demand, assumptions, vcfg, net_file=net_file,
                               lambda_scale=lam, seed=seed, out_dir=out_dir,
-                              blocked_edges=blocked)
+                              blocked_edges=blocked, extra_turn_rules=extra_rules)
                 done += 1
                 tag = "done" if ran else "skip (exists)"
                 print(f"[{done}/{total}] {label} lambda={lam} seed={seed} {tag} "
