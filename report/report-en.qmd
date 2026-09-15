@@ -1,7 +1,7 @@
 ---
 title: "Seyedi Under-Bridge Intersection Traffic Reorganization, Kerman"
 subtitle: "Phase 4 Report — all 6 scenarios plus one combined scenario built and simulated; behavioral diagnostic and this phase's ranking"
-author: "Study Team (Claude Code, supervised by Saber Naseralavi)"
+author: "Akram Mazaheri, supervised by Saber Naseralavi"
 date: today
 ---
 
