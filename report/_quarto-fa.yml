@@ -13,8 +13,17 @@ format:
     documentclass: article
     template-partials:
       - babel-lang.tex
+    filters:
+      # اصلاح دو باگ واقعی bidi/xepersian که با مقایسهٔ مختصات کلمات در PDF
+      # رندرشده در برابر متن مبدأ کشف شد (نه با نگاه چشمی): (۱) اسپن کد درون‌خطی
+      # حاوی فاصله/اعشار (مثلاً `--lateral-resolution 0.8`) با ترتیب کلمه/نقطهٔ
+      # اعشار برعکس رندر می‌شود؛ (۲) دنبالهٔ ≥۲ کلمهٔ لاتین در متن فارسی (مثلاً
+      # «RCUT (Restricted Crossing U-Turn)») با ترتیب کلمهٔ برعکس رندر می‌شود.
+      # رجوع به report/filters/ltr-fix.lua برای توضیح کامل.
+      - filters/ltr-fix.lua
     include-in-header:
       text: |
+        \usepackage{microtype}
         \usepackage{xepersian}
         \settextfont[Path = assets/fonts/, Extension = .ttf, UprightFont = *-Regular, BoldFont = *-Bold]{Vazirmatn}
         \setlatintextfont[Path = assets/fonts/, Extension = .ttf, UprightFont = *-Regular, BoldFont = *-Bold]{Vazirmatn}
